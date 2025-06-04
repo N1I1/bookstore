@@ -1,6 +1,10 @@
-# Bookstore Management System
+## Bookstore Management System
 
 网上书店管理系统。
+
+## 结构说明
+
+**doc：**相关文档
 
 ## 功能需求
 
