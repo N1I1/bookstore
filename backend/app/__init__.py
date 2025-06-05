@@ -19,4 +19,8 @@ def create_app():
 
     # Import models for Alchemy to recognize
     from app.models import Book
+
+    # Register blueprints
+    from app.routes.book import book_bp
+    app.register_blueprint(book_bp)
     return app
