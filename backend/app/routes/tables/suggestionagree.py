@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
 
-from backend.app.models.tables.suggestionagree import SuggestionAgree
+from backend.app.models.suggestionagree import SuggestionAgree
 from app import db
 
 # 创建蓝图

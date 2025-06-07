@@ -34,4 +34,16 @@ TODO
 
 ## 项目结构
 
-TODO
+**doc:**相关文档
+
+**backend：**后端代码
+
+​	**app：**Flask应用核心部分
+
+​		**models：**数据库模型定义
+
+​		**routes：**路由定义
+
+​			**tables：**表的基本功能（增删改查）路由定义
+
+**frontend:**前端代码

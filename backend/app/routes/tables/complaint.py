@@ -3,7 +3,7 @@ from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
-from backend.app.models.tables.complaint import Complaint
+from backend.app.models.complaint import Complaint
 from app import db
 
 # 创建蓝图

@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
 
-from backend.app.models.tables.book import Book
+from backend.app.models.book import Book
 from app import db
 
 book_bp = Blueprint('book', __name__, url_prefix='/api/books')
