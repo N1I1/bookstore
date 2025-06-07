@@ -17,10 +17,60 @@ def create_app():
 
     CORS(app)
 
-    # Import models for Alchemy to recognize
+    
+    """
+    Import models for Alchemy to recognize
+    """
+    
+    # import tables
+    from app.models import Admin
     from app.models import Book
+    from app.models import Comment
+    from app.models import Complaint
+    from app.models import ForumPost
+    from app.models import Order
+    from app.models import OrderDetail
+    from app.models import PostLike
+    from app.models import Suggestion
+    from app.models import SuggestionAgree
+    from app.models import User
+    from app.models import UserBrowse
+    from app.models import UserCart
+    from app.models import UserFavorite
 
-    # Register blueprints
-    from app.routes.book import book_bp
+    """
+    Register blueprints
+    """
+
+    # register tables
+    from backend.app.routes.tables.admin import admin_bp
+    from backend.app.routes.tables.book import book_bp
+    from backend.app.routes.tables.comment import comment_bp
+    from backend.app.routes.tables.complaint import complaint_bp
+    from backend.app.routes.tables.forumpost import forum_post_bp
+    from backend.app.routes.tables.order import order_bp
+    from backend.app.routes.tables.orderdetail import order_detail_bp
+    from backend.app.routes.tables.postlike import post_like_bp
+    from backend.app.routes.tables.suggestion import suggestion_bp
+    from backend.app.routes.tables.suggestionagree import suggestion_agree_bp
+    from backend.app.routes.tables.user import user_bp
+    from backend.app.routes.tables.userbrowse import user_browse_bp
+    from backend.app.routes.tables.usercart import user_cart_bp
+    from backend.app.routes.tables.userfavorite import user_favorite_bp
+
+    app.register_blueprint(admin_bp)
     app.register_blueprint(book_bp)
+    app.register_blueprint(comment_bp)
+    app.register_blueprint(complaint_bp)
+    app.register_blueprint(forum_post_bp)
+    app.register_blueprint(order_bp)
+    app.register_blueprint(order_detail_bp)
+    app.register_blueprint(post_like_bp)
+    app.register_blueprint(suggestion_bp)
+    app.register_blueprint(suggestion_agree_bp)
+    app.register_blueprint(user_bp)
+    app.register_blueprint(user_browse_bp)
+    app.register_blueprint(user_cart_bp)
+    app.register_blueprint(user_favorite_bp)
+    
     return app
