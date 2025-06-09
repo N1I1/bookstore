@@ -43,20 +43,20 @@ def create_app():
     """
 
     # register tables
-    from backend.app.routes.tables.admin import admin_bp
-    from backend.app.routes.tables.book import book_bp
-    from backend.app.routes.tables.comment import comment_bp
-    from backend.app.routes.tables.complaint import complaint_bp
-    from backend.app.routes.tables.forumpost import forum_post_bp
-    from backend.app.routes.tables.order import order_bp
-    from backend.app.routes.tables.orderdetail import order_detail_bp
-    from backend.app.routes.tables.postlike import post_like_bp
-    from backend.app.routes.tables.suggestion import suggestion_bp
-    from backend.app.routes.tables.suggestionagree import suggestion_agree_bp
-    from backend.app.routes.tables.user import user_bp
-    from backend.app.routes.tables.userbrowse import user_browse_bp
-    from backend.app.routes.tables.usercart import user_cart_bp
-    from backend.app.routes.tables.userfavorite import user_favorite_bp
+    from app.routes.tables.admin import admin_bp
+    from app.routes.tables.book import book_bp
+    from app.routes.tables.comment import comment_bp
+    from app.routes.tables.complaint import complaint_bp
+    from app.routes.tables.forumpost import forum_post_bp
+    from app.routes.tables.order import order_bp
+    from app.routes.tables.orderdetail import order_detail_bp
+    from app.routes.tables.postlike import post_like_bp
+    from app.routes.tables.suggestion import suggestion_bp
+    from app.routes.tables.suggestionagree import suggestion_agree_bp
+    from app.routes.tables.user import user_bp
+    from app.routes.tables.userbrowse import user_browse_bp
+    from app.routes.tables.usercart import user_cart_bp
+    from app.routes.tables.userfavorite import user_favorite_bp
 
     app.register_blueprint(admin_bp)
     app.register_blueprint(book_bp)
