@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
 
-from backend.app.models.book import Book
+from app.models.book import Book
 from app import db
 
 book_bp = Blueprint('book', __name__, url_prefix='/api/books')
@@ -14,6 +14,7 @@ class BookView(MethodView):
         if book_id is None:
             # 获取所有书籍
             books = Book.query.all()
+            print(f"Retrieved {len(books)} books from the database.")
             return jsonify([{
                 "book_id": book.book_id,
                 "title": book.title,

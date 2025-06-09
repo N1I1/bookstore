@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
 
-from backend.app.models.postlike import PostLike
+from app.models.postlike import PostLike
 from app import db
 
 # 创建蓝图
