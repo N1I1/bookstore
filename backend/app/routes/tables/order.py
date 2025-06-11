@@ -146,5 +146,6 @@ class OrderView(MethodView):
 
 # 将 OrderView 注册到蓝图
 order_api = OrderView.as_view('order_api')
-order_bp.add_url_rule('/', view_func=order_api, methods=['GET', 'POST'], defaults={'order_id': None})
+order_bp.add_url_rule('/', view_func=order_api, methods=['GET'], defaults={'order_id': None})
+order_bp.add_url_rule('/', view_func=order_api, methods=['POST'])
 order_bp.add_url_rule('/<int:order_id>', view_func=order_api, methods=['GET', 'PUT', 'DELETE'])
