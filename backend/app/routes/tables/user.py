@@ -54,13 +54,7 @@ class UserView(MethodView):
             db.session.add(new_user)
             db.session.commit()
             return jsonify({
-                "user_id": new_user.user_id,
-                "username": new_user.username,
-                "email": new_user.email,
-                "phone": new_user.phone,
-                "register_time": new_user.register_time.isoformat(),
-                "last_login_time": new_user.last_login_time.isoformat() if new_user.last_login_time else None,
-                "default_address": new_user.default_address
+                'message': 'User register successfully'
             }), 201
         except IntegrityError:
             db.session.rollback()
@@ -73,7 +67,6 @@ class UserView(MethodView):
         user = User.query.get(user_id)
         if not user:
             return jsonify({"error": "User not found"}), 404
-
         data = request.json
         try:
             user.username = data.get('username', user.username)
@@ -107,5 +100,6 @@ class UserView(MethodView):
 
 # 将 UserView 注册到蓝图
 user_api = UserView.as_view('user_api')
-user_bp.add_url_rule('/', view_func=user_api, methods=['GET', 'POST'], defaults={'user_id': None})
+user_bp.add_url_rule('/', view_func=user_api, methods=['GET'], defaults={'user_id': None})
+user_bp.add_url_rule('/', view_func=user_api, methods=['POST'])
 user_bp.add_url_rule('/<int:user_id>', view_func=user_api, methods=['GET', 'PUT', 'DELETE'])
