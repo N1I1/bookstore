@@ -3,9 +3,7 @@
 </script>
 
 <template>
-  <header>
-  <h1>Hello World</h1>
-  </header>
+  <router-view />
 
 </template>
 
