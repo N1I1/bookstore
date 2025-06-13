@@ -104,5 +104,6 @@ class AdminView(MethodView):
 
 # 将 AdminView 注册到蓝图
 admin_api = AdminView.as_view('admin_api')
-admin_bp.add_url_rule('/', view_func=admin_api, methods=['GET', 'POST'], defaults={'admin_id': None})
+admin_bp.add_url_rule('/', view_func=admin_api, methods=['GET'], defaults={'admin_id': None})
+admin_bp.add_url_rule('/', view_func=admin_api, methods=['POST'])
 admin_bp.add_url_rule('/<int:admin_id>', view_func=admin_api, methods=['GET', 'PUT', 'DELETE'])
