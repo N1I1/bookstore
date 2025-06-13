@@ -49,7 +49,6 @@ def create_app():
     app.register_blueprint(register_bp)
     app.register_blueprint(login_bp)
 
-
     from app.routes.tables.admin import admin_bp
     from app.routes.tables.book import book_bp
     from app.routes.tables.comment import comment_bp
