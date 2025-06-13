@@ -15,4 +15,5 @@ class Config:
         # 'sqlite:///' +  os.path.join(basedir, 'instance', 'bookstore.db')  # Use SQLite for simplicity in this example
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = 'root'
     
