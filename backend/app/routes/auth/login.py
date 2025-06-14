@@ -6,7 +6,6 @@ from datetime import datetime
 
 from app import db
 from app.models.user import User
-from app.models.admin import Admin
 
 
 # 定义蓝图
@@ -20,7 +19,7 @@ class LoginView(MethodView):
         password = data.get('password', None)
 
         if not username or not password:
-            return jsonify({"error": "Missing username, password"}), 400
+            return jsonify({"error": "Missing username or password"}), 400
 
         try:
             user = User.query.filter_by(username=username).first()
