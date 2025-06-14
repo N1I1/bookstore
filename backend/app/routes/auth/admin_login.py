@@ -20,7 +20,7 @@ class AdminLoginView(MethodView):
         password = data.get('password', None)
 
         if not username or not password:
-            return jsonify({"error": "Missing username, password"}), 400
+            return jsonify({"error": "Missing username or password"}), 400
 
         try:
             admin_user = Admin.query.filter_by(username=username).first()
@@ -28,7 +28,7 @@ class AdminLoginView(MethodView):
                 admin_user.last_login_time = datetime.now()
                 db.session.commit()
                 set_user_session(admin_user)
-                return jsonify({"message": "Admin login successful"}), 200
+                return jsonify({"message": "Login successful"}), 200
             else:
                 return jsonify({"error": "Invalid username or password"}), 401
         except Exception as e:
