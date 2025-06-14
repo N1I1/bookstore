@@ -23,17 +23,9 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
-      - name: Copy built files to backend
-        run: |
-          rm -rf backend/static/*
-          rm -rf backend/templates/*
-          cp -R frontend/dist/assets/* backend/static/
-          cp frontend/dist/index.html backend/templates/
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
 
-      - name: Commit and push built assets
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add backend/static backend/templates
-          git commit -m "chore: auto-update built frontend [skip ci]" || echo "No changes to commit"
-          git push
