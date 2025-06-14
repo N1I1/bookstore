@@ -25,6 +25,7 @@ def create_app():
     # import tables
     from app.models import Admin
     from app.models import Book
+    from app.models import BookTag
     from app.models import Comment
     from app.models import Complaint
     from app.models import ForumPost
@@ -57,6 +58,7 @@ def create_app():
 
     from app.routes.tables.admin import admin_bp
     from app.routes.tables.book import book_bp
+    from app.routes.tables.booktag import booktag_bp
     from app.routes.tables.comment import comment_bp
     from app.routes.tables.complaint import complaint_bp
     from app.routes.tables.forumpost import forum_post_bp
@@ -72,6 +74,7 @@ def create_app():
 
     app.register_blueprint(admin_bp)
     app.register_blueprint(book_bp)
+    app.register_blueprint(booktag_bp)
     app.register_blueprint(comment_bp)
     app.register_blueprint(complaint_bp)
     app.register_blueprint(forum_post_bp)
