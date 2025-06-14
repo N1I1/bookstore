@@ -1,4 +1,5 @@
 from .book import Book
+from .booktag import BookTag
 from .user import User
 from .admin import Admin
 from .userfavorite import UserFavorite

@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask.views import MethodView
 
 
-from models import Book
+from app.models import Book
 from app import db
 
 # 定义蓝图
