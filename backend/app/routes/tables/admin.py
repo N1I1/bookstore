@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
+from  werkzeug.security import generate_password_hash
 from datetime import datetime
 
 from app.models.admin import Admin
@@ -45,7 +46,7 @@ class AdminView(MethodView):
         try:
             new_admin = Admin(
                 username=data['username'],
-                password=data['password'],
+                password=generate_password_hash(data['password']),
                 email=data['email'],
                 phone=data['phone']
             )
