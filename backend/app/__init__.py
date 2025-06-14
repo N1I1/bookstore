@@ -42,14 +42,18 @@ def create_app():
     Register blueprints
     """
 
-    # register tables
+    # register auth
+
     from app.routes.auth.register import register_bp
     from app.routes.auth.login import login_bp
     from app.routes.auth.admin_login import admin_login_bp
+    from app.routes.auth.update_info import info_bp
 
     app.register_blueprint(register_bp)
     app.register_blueprint(login_bp)
+    app.register_blueprint(info_bp)
     app.register_blueprint(admin_login_bp)
+
 
     from app.routes.tables.admin import admin_bp
     from app.routes.tables.book import book_bp
@@ -80,5 +84,11 @@ def create_app():
     app.register_blueprint(user_browse_bp)
     app.register_blueprint(user_cart_bp)
     app.register_blueprint(user_favorite_bp)
+
+    # reigster views
+
+    from app.routes.views.search_books import book_search_bp
+
+    app.register_blueprint(book_search_bp)
     
     return app
