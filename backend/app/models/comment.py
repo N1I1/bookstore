@@ -11,3 +11,12 @@ class Comment(db.Model):
     comment_time = db.Column(db.DateTime, nullable=False, default=datetime.now)
     parent_comment_id = db.Column(db.Integer, db.ForeignKey('comment.comment_id'), default=None)
     is_deleted = db.Column(db.Boolean, default=False)
+
+    # Relationships
+    forum_post = db.relationship('ForumPost', back_populates='comments')
+    user = db.relationship('User', back_populates='comments')
+    parent_comment = db.relationship('Comment', remote_side=[comment_id], back_populates='replies')
+    replies = db.relationship(
+        'Comment',
+        back_populates='parent_comment'
+    )

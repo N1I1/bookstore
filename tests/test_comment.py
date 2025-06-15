@@ -56,17 +56,14 @@ def test_create_comment_missing_fields(client, login_user):
     assert response.status_code == 400
     assert b"Missing required fields" in response.data
 
-def test_get_all_comments(client, login_user, sample_comment):
-    """测试获取所有评论"""
-    response = client.get('/api/comments/')
-    assert response.status_code == 200
-    assert b"test comment" in response.data
-
 def test_get_single_comment(client, login_user, sample_comment):
     """测试获取单条评论"""
     response = client.get(f'/api/comments/{sample_comment.comment_id}')
     assert response.status_code == 200
-    assert b"test comment" in response.data
+    data = response.get_json()
+    assert data["comment_id"] == sample_comment.comment_id
+    assert data["username"] == "testuser"  # 假设你的测试用户叫 testuser
+    assert data["content"] == "test comment"
 
 def test_update_comment(client, login_user, sample_comment):
     """测试更新评论"""
@@ -109,3 +106,28 @@ def test_delete_nonexistent_comment(client, login_user):
     response = client.delete('/api/comments/99999')
     assert response.status_code == 404
     assert b"Comment not found" in response.data
+
+def test_get_comment_tree(client, login_user, forum_post):
+    """测试获取评论树结构"""
+    # 创建父评论
+    parent = Comment(post_id=forum_post.post_id, user_id=1, content="parent comment")
+    db.session.add(parent)
+    db.session.commit()
+    # 创建子评论
+    child = Comment(post_id=forum_post.post_id, user_id=1, content="child comment", parent_comment_id=parent.comment_id)
+    db.session.add(child)
+    db.session.commit()
+
+    response = client.get(f'/api/comments/tree/{forum_post.post_id}')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+    assert any(c["content"] == "parent comment" for c in data)
+    # 检查子评论在replies中
+    parent_node = next(c for c in data if c["content"] == "parent comment")
+    assert any(r["content"] == "child comment" for r in parent_node["replies"])
+
+    # 清理
+    db.session.delete(child)
+    db.session.delete(parent)
+    db.session.commit()

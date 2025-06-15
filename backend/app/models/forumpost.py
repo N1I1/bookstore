@@ -10,3 +10,5 @@ class ForumPost(db.Model):
     content = db.Column(db.Text, default=None)
     post_time = db.Column(db.DateTime, nullable=False, default=datetime.now)
     browse_count = db.Column(db.Integer, nullable=False, default=0)
+
+    comments = db.relationship('Comment', back_populates='forum_post')
