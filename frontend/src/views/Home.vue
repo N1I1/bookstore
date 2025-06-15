@@ -3,104 +3,144 @@
   <div class="home-container">
     <el-header class="header">
       <div class="logo">网上书店</div>
-      <div class="user-info">
+      <div class="header-actions">
+        <el-button type="text" class="cart-btn" @click="goCart">
+          <el-icon><i class="el-icon-shopping-cart-full"></i></el-icon>
+          <span style="margin-left:4px;">购物车</span>
+        </el-button>
         <el-avatar icon="el-icon-user" @click="goUserInfo" style="cursor:pointer;" />
         <span class="username">欢迎，{{ username }}</span>
         <el-button type="text" @click="logout">退出登录</el-button>
       </div>
     </el-header>
-    <el-main>
-      <el-input
-        v-model="search"
-        placeholder="搜索图书、作者、ISBN"
-        prefix-icon="el-icon-search"
-        class="search-bar"
-        clearable
-      />
-      <el-row :gutter="20" class="book-list">
-        <el-col :span="6" v-for="book in filteredBooks" :key="book.id">
+    <div class="main-content">
+      <!-- 左侧标签栏 -->
+      <el-menu
+        class="tag-menu"
+        :default-active="activeTag"
+        @select="handleTagSelect"
+      >
+        <el-menu-item index="全部">全部</el-menu-item>
+        <el-menu-item
+          v-for="tag in tags"
+          :key="tag"
+          :index="tag"
+        >{{ tag }}</el-menu-item>
+      </el-menu>
+      <!-- 右侧内容 -->
+      <div class="content-area">
+        <el-input
+          v-model="search"
+          placeholder="搜索书名、作者、出版社"
+          prefix-icon="el-icon-search"
+          class="search-bar"
+          clearable
+        />
+        <el-row :gutter="20" class="book-list">
+          <el-col :span="6" v-for="book in filteredBooks" :key="book.id">
             <el-card
-            :body-style="{ padding: '20px', cursor: 'pointer' }"
-            class="book-card"
-            @click="goBookDetails(book.id)"
+              :body-style="{ padding: '20px', cursor: 'pointer' }"
+              class="book-card"
+              @click="goBookDetails(book.id)"
             >
-            <img :src="book.cover" class="book-cover" alt="封面" />
-            <div class="book-info">
+              <img :src="book.cover" class="book-cover" alt="封面" />
+              <div class="book-info">
                 <h3>{{ book.title }}</h3>
+                <el-tag size="small" style="margin-bottom: 5px;">{{ book.tag }}</el-tag>
                 <p class="author">作者：{{ book.author }}</p>
                 <p class="price">￥{{ book.price }}</p>
-                <el-button type="primary" size="small">加入购物车</el-button>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-    </el-main>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
-const username = ref('用户') // 实际项目可从登录信息获取
+const username = ref('用户')
 const search = ref('')
+const tags = ref(['科幻小说', '文学', '历史', '经济', '青春', '推理'])
+const activeTag = ref('全部')
 
 const books = ref([
   {
     id: 1,
     title: '三体',
     author: '刘慈欣',
+    publisher: '重庆出版社',
     price: 49.9,
-    cover: 'https://img1.doubanio.com/view/subject/l/public/s33445566.jpg'
+    cover: 'https://img1.doubanio.com/view/subject/l/public/s33445566.jpg',
+    tag: '科幻小说'
   },
   {
     id: 2,
     title: '活着',
     author: '余华',
+    publisher: '作家出版社',
     price: 39.9,
-    cover: 'https://img1.doubanio.com/view/subject/l/public/s29796444.jpg'
+    cover: 'https://img1.doubanio.com/view/subject/l/public/s29796444.jpg',
+    tag: '文学'
   },
   {
     id: 3,
     title: '解忧杂货店',
     author: '东野圭吾',
+    publisher: '南海出版公司',
     price: 45.0,
-    cover: 'https://img1.doubanio.com/view/subject/l/public/s27264181.jpg'
+    cover: 'https://img1.doubanio.com/view/subject/l/public/s27264181.jpg',
+    tag: '推理'
   },
   {
     id: 4,
     title: '百年孤独',
     author: '加西亚·马尔克斯',
+    publisher: '南海出版公司',
     price: 59.0,
-    cover: 'https://img1.doubanio.com/view/subject/l/public/s6384944.jpg'
+    cover: 'https://img1.doubanio.com/view/subject/l/public/s6384944.jpg',
+    tag: '文学'
   }
-  // ...可继续添加
+  // ...更多图书
 ])
 
 const filteredBooks = computed(() => {
-  if (!search.value) return books.value
-  return books.value.filter(
-    book =>
-      book.title.includes(search.value) ||
-      book.author.includes(search.value) ||
-      String(book.id).includes(search.value)
-  )
+  let result = books.value
+  if (activeTag.value !== '全部') {
+    result = result.filter(book => book.tag === activeTag.value)
+  }
+  if (search.value) {
+    result = result.filter(
+      book =>
+        book.title.includes(search.value) ||
+        book.author.includes(search.value) ||
+        book.publisher.includes(search.value)
+    )
+  }
+  return result
 })
 
-function logout() {
-  // 清除登录状态，跳转到登录页
-  router.push('/login')
+function handleTagSelect(tag) {
+  activeTag.value = tag
 }
 
 function goBookDetails(id) {
   router.push(`/book/${id}`)
 }
-
+function goCart() {
+  router.push('/cart')
+}
 function goUserInfo() {
   router.push('/user')
 }
-
+function logout() {
+  router.push('/login')
+}
 </script>
 
 <style scoped>
@@ -117,20 +157,36 @@ function goUserInfo() {
   padding: 0 40px;
   height: 64px;
 }
-.logo {
-  font-size: 24px;
-  font-weight: bold;
-}
-.user-info {
+.header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
 }
+.cart-btn {
+  color: #fff;
+  font-size: 18px;
+}
 .username {
   margin: 0 10px;
 }
+.main-content {
+  display: flex;
+  margin-top: 20px;
+}
+.tag-menu {
+  width: 160px;
+  min-height: 400px;
+  margin-right: 30px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  padding-top: 20px;
+}
+.content-area {
+  flex: 1;
+}
 .search-bar {
-  margin: 30px auto 20px;
+  margin: 0 auto 20px;
   max-width: 500px;
   display: block;
 }
