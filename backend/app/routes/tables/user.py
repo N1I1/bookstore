@@ -75,5 +75,4 @@ class UserView(MethodView):
 
 # 将 UserView 注册到蓝图
 user_api = UserView.as_view('user_api')
-
 user_bp.add_url_rule('/<int:user_id>', view_func=user_api, methods=['GET', 'PUT', 'DELETE'])
