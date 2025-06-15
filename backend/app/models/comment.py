@@ -10,3 +10,4 @@ class Comment(db.Model):
     content = db.Column(db.Text, default=None)
     comment_time = db.Column(db.DateTime, nullable=False, default=datetime.now)
     parent_comment_id = db.Column(db.Integer, db.ForeignKey('comment.comment_id'), default=None)
+    is_deleted = db.Column(db.Boolean, default=False)
