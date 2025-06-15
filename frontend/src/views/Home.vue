@@ -54,6 +54,27 @@
           </el-col>
         </el-row>
       </div>
+      <!-- 右侧论坛热门帖子区 -->
+      <div class="forum-sidebar">
+        <el-card class="forum-card">
+          <h3 style="margin-bottom: 16px;">热门帖子</h3>
+          <el-scrollbar height="500px">
+            <div
+              v-for="post in topPosts"
+              :key="post.post_id"
+              class="forum-post-item"
+              @click="goPost(post.post_id)"
+            >
+              <div class="forum-content">{{ post.content }}</div>
+              <div class="forum-meta">
+                <span class="forum-time">{{ formatTime(post.post_time) }}</span>
+                <span class="forum-browse">浏览：{{ post.browse_count }}</span>
+              </div>
+            </div>
+            <div v-if="!topPosts.length" class="no-post">暂无热门帖子</div>
+          </el-scrollbar>
+        </el-card>
+      </div>
     </div>
   </div>
 </template>
@@ -68,6 +89,35 @@ const username = ref('用户')
 const search = ref('')
 const tags = ref(['科幻小说', '文学', '历史', '经济', '青春', '推理'])
 const activeTag = ref('全部')
+
+// 模拟后端获取帖子数据，实际应通过API获取
+const forumPosts = ref([
+  {
+    post_id: 1,
+    user_id: 2,
+    book_id: 1,
+    content: '三体真的很震撼，强烈推荐！',
+    post_time: '2024-06-01 12:30:00',
+    browse_count: 120
+  },
+  {
+    post_id: 2,
+    user_id: 3,
+    book_id: 2,
+    content: '活着让我感动落泪。',
+    post_time: '2024-06-10 09:15:00',
+    browse_count: 98
+  },
+  // ...更多帖子
+])
+
+// 取浏览量前十的帖子
+const topPosts = computed(() =>
+  forumPosts.value
+    .slice()
+    .sort((a, b) => b.browse_count - a.browse_count)
+    .slice(0, 10)
+)
 
 const books = ref([
   {
@@ -140,6 +190,14 @@ function goUserInfo() {
 }
 function logout() {
   router.push('/login')
+}
+function goPost(postId) {
+  router.push(`/forum/${postId}`)
+}
+
+function formatTime(time) {
+  // 简单格式化，实际可用dayjs等库
+  return time.replace('T', ' ').slice(0, 16)
 }
 </script>
 
@@ -226,5 +284,44 @@ function logout() {
   color: #e4393c;
   font-size: 16px;
   margin: 5px 0 10px 0;
+}
+.main-content {
+  display: flex;
+  margin-top: 20px;
+}
+.forum-sidebar {
+  width: 320px;
+  margin-left: 30px;
+}
+.forum-card {
+  min-height: 200px;
+  max-height: 600px;
+  overflow: hidden;
+}
+.forum-post-item {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.forum-post-item:hover {
+  background: #f5faff;
+}
+.forum-content {
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+.forum-meta {
+  font-size: 12px;
+  color: #888;
+  display: flex;
+  justify-content: space-between;
+}
+.no-post {
+  text-align: center;
+  color: #aaa;
+  margin: 20px 0;
 }
 </style>
