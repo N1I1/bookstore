@@ -12,33 +12,21 @@ comment_bp = Blueprint('comment', __name__, url_prefix='/api/comments')
 
 
 class CommentView(MethodView):
-    def get(self, comment_id=None):
+    def get(self, comment_id):
         """处理 GET 请求，获取评论信息"""
-        if comment_id is None:
-            # 获取所有评论
-            comments = Comment.query.all()
-            return jsonify([{
+        # 获取单个评论
+        comment = db.session.get(Comment, comment_id)
+        if comment and not comment.is_deleted:
+            return jsonify({
                 "comment_id": comment.comment_id,
-                "post_id": comment.post_id,
-                "user_id": comment.user_id,
+                # "post_id": comment.post_id,
+                "username": comment.user.username if comment.user else "Unknown",
                 "content": comment.content,
                 "comment_time": comment.comment_time.isoformat(),
-                "parent_comment_id": comment.parent_comment_id
-            } for comment in comments])
+                # "parent_comment_id": comment.parent_comment_id
+            })
         else:
-            # 获取单个评论
-            comment = db.session.get(Comment, comment_id)
-            if comment:
-                return jsonify({
-                    "comment_id": comment.comment_id,
-                    "post_id": comment.post_id,
-                    "user_id": comment.user_id,
-                    "content": comment.content,
-                    "comment_time": comment.comment_time.isoformat(),
-                    "parent_comment_id": comment.parent_comment_id
-                })
-            else:
-                return jsonify({"error": "Comment not found"}), 404
+            return jsonify({"error": "Comment not found"}), 404
 
     def post(self):
         """处理 POST 请求，创建新评论"""
@@ -99,6 +87,26 @@ class CommentView(MethodView):
             db.session.commit()
             return jsonify({"message": "Comment deleted"}), 204
 
+def get_comments_tree(post_id):
+    parent_comments = db.session.query(Comment).filter_by(post_id=post_id, parent_comment_id=None).all()
+    if not parent_comments:
+        return []
+
+    def serialize(comment):
+        return {
+            "comment_id": comment.comment_id,
+            "username": comment.user.username,
+            "content": comment.content if not comment.is_deleted else "",
+            "comment_time": comment.comment_time.isoformat(),
+            "replies": [serialize(child) for child in comment.replies]
+        }
+
+    return [serialize(c) for c in parent_comments]
+
+# 用法
+@comment_bp.route('/tree/<int:post_id>')
+def get_comment_tree(post_id):
+    return jsonify(get_comments_tree(post_id))
 
 # 将 CommentView 注册到蓝图
 comment_api = CommentView.as_view('comment_api')
