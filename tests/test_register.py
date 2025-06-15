@@ -1,5 +1,6 @@
 import pytest
 from app.models import User
+from app import db
 from werkzeug.security import check_password_hash
 
 def test_register_success(client):
@@ -19,6 +20,8 @@ def test_register_success(client):
     assert user is not None
     assert user.email == "newuser@example.com"
     assert check_password_hash(user.password, "newpassword")
+    db.session.delete(user)
+    db.session.commit()
 
 def test_register_missing_fields(client):
     response = client.post('/api/register/', json={
@@ -46,6 +49,8 @@ def test_register_duplicate_username(client):
     })
     assert response.status_code == 400
     assert b"Username or email already exists" in response.data
+    db.session.query(User).filter_by(username="dupuser").delete()
+    db.session.commit()
 
 def test_register_duplicate_email(client):
     # 先注册一个用户
@@ -64,3 +69,5 @@ def test_register_duplicate_email(client):
     })
     assert response.status_code == 400
     assert b"Username or email already exists" in response.data
+    db.session.query(User).filter_by(username="user3").delete()
+    db.session.commit()
