@@ -12,3 +12,5 @@ class User(db.Model):
     register_time = db.Column(db.DateTime, nullable=False, default=datetime.now)
     last_login_time = db.Column(db.DateTime, default=None)
     default_address = db.Column(db.String(255), default=None)
+
+    comments = db.relationship('Comment', back_populates='user')
