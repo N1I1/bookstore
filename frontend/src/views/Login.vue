@@ -7,7 +7,7 @@
         <el-form-item prop="username">
           <el-input
             v-model="form.username"
-            placeholder="用户名/邮箱"
+            placeholder="用户名"
             prefix-icon="el-icon-user"
             clearable
           />
@@ -61,7 +61,8 @@ const onLogin = () => {
       // 假设后端接口为 POST /api/login
       const res = await axios.post('/api/login', {
         username: form.value.username,
-        password: form.value.password
+        password: form.value.password,
+        user_type: 'user'// 或 'admin'，根据登录逻辑
       })
       if (res.data.success) {
         ElMessage.success('登录成功')
