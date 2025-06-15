@@ -14,3 +14,4 @@ class User(db.Model):
     default_address = db.Column(db.String(255), default=None)
 
     comments = db.relationship('Comment', back_populates='user')
+    posts = db.relationship('ForumPost', back_populates='poster')
