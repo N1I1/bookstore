@@ -1,137 +1,286 @@
-# 一、用户信息管理模块
+# Bookstore API 接口文档
 
-### 1. 用户登录
+## 认证相关
 
-**API：** `/api/login`
+### 用户注册
 
-**方法：** `POST`
+- **URL**：`POST /api/register/`
+- **请求体**（JSON）：
+  ```json
+  {
+    "username": "string",
+    "password": "string",
+    "email": "string",
+    "phone": "string"
+  }
+  ```
+- **响应**：
+  - 201 成功：`{"message": "User registered successfully", "user_id": 1}`
+  - 400 缺少字段或用户名/邮箱已存在
 
-**输入：** 
+---
 
-```python
-{
-	username:				# 用户名
-	password:				# 密码
-	user_type:				# 用户类型（user 或 admin）
-}
-```
+### 用户登录
 
-**输出：**
+- **URL**：`POST /api/login/`
+- **请求体**（JSON）：
+  ```json
+  {
+    "username": "string",
+    "password": "string"
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "Login successful"}`
+  - 401 用户名或密码错误
+  - 400 缺少字段
 
-```python
-# 数据不全
-jsonify({"error": "Missing username, password, or user_type"}), 400
+- **说明**：登录成功后，`session` 自动保存用户信息。
 
-#登录成功
-jsonify({
-    "message": "Login successful", 
-    "user_id": user.user_id, 
-    "user_type": "user"
-}), 200
+---
 
-jsonify({
-    "message": "Login successful", 
-    "user_id": admin.admin_id, 
-    "user_type": "admin"
-}), 200
+### 用户登出
 
-#密码或账户或用户类型错误
-jsonify({"error": "Invalid username or password"}), 401
-jsonify({"error": "Unknown user type"}), 400
-```
+- **URL**：`POST /api/login/logout`
+- **响应**：
+  - 200 成功：`{"message": "Logout successful"}`
 
+---
 
+## 用户信息
 
-### 2. 用户注册
+### 获取用户信息
 
-**API：** `/api/register`
+- **URL**：`GET /api/users/<user_id>`
+- **说明**：仅本人可查
+- **响应**：
+  - 200 成功
+    ```json
+    {
+      "username": "string",
+      "email": "string",
+      "phone": "string",
+      "register_time": "2025-06-15T12:34:56",
+      "last_login_time": "2025-06-15T12:34:56",
+      "default_address": "string"
+    }
+    ```
+  - 401 未登录
+  - 403 非本人
+  - 404 用户不存在
 
-**方法：** `POST`
+---
 
-**输入：**
+### 更新用户信息
 
-```python
-{
-    username:               # 用户名
-    password:               # 密码
-    email:                  # 邮箱
-    phone:                  # 手机号
-    user_type:              # 用户类型（user 或 admin）
-}
-```
+- **URL**：`PUT /api/users/<user_id>`
+- **请求体**（JSON，可选字段）：
+  ```json
+  {
+    "username": "string",
+    "email": "string",
+    "phone": "string",
+    "password": "string",
+    "default_address": "string"
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "User updated successfully"}`
+  - 401 未登录
+  - 403 非本人
+  - 404 用户不存在
+  - 400 用户名或邮箱已存在
 
-**输出：**
+---
 
-```python
-# 数据不全
-jsonify({"error": "Missing required fields"}), 400
+### 删除用户
 
-# 用户名或邮箱已存在
-jsonify({"error": "Username or email already exists"}), 400
+- **URL**：`DELETE /api/users/<user_id>`
+- **响应**：
+  - 204 成功，无内容
+  - 401 未登录
+  - 403 非本人
+  - 404 用户不存在
 
-# 用户类型无效
-jsonify({"error": "Invalid user type"}), 400
+> 此处可能会有问题，与 comment forum_post 表之间的关系需要再考虑一下
 
-# 注册成功（普通用户）
-jsonify({
-    "message": "User registered successfully", 
-    "user_id": new_user.user_id
-}), 201
+---
 
-# 注册成功（管理员）
-jsonify({
-    "message": "Admin registered successfully", 
-    "admin_id": new_admin.admin_id
-}), 201
+## 帖子（ForumPost）
 
-# 服务器内部错误
-jsonify({"error": "Internal server error"}), 500
-```
+### 创建帖子
 
-好的，以下是按照你提供的格式重新编写的 **信息管理模块** 的 API 接口说明，不包含示例部分：
+- **URL**：`POST /api/forum_posts/`
+- **请求体**（JSON）：
+  ```json
+  {
+    "title": "string",          // 可为空，为空则设置为 Untitled Post
+    "content": "string",        // 必填
+    "book_id": 1                // 可选
+  }
+  ```
+- **响应**：
+  - 201 成功：`{"Message": "Post created successfully", "post_id": 1}`
+  - 401 未登录
+  - 400 缺少内容或 book_id 不存在
 
-### 3. 用户信息更新
+---
 
-**API：** `/api/update_info`
+### 获取单个帖子
 
-**方法：** `POST`
+- **URL**：`GET /api/forum_posts/<post_id>`
+- **响应**：
+  - 200 成功
+    ```json
+    {
+      "post_id": 1,
+      "book_id": 1,
+      "title": "string",
+      "content": "string",
+      "post_time": "2025-06-15T12:34:56",
+      "browse_count": 10
+    }
+    ```
+  - 404 帖子不存在
 
-**输入：**
+---
 
-```python
-{
-    user_id:                # 用户或管理员的ID，必填
-    username:               # 新用户名（可选）
-    password:               # 新密码（可选）
-    email:                  # 新邮箱（可选）
-    phone:                  # 新手机号（可选）
-    default_address:        # 用户的默认地址（可选，仅对用户有效）
-    user_type:              # 用户类型（"user" 或 "admin"），必填
-}
-```
+### 更新帖子
 
-**输出：**
+- **URL**：`PUT /api/forum_posts/<post_id>`
+- **请求体**（JSON）：
+  ```json
+  {
+    "title": "string",
+    "content": "string",
+    "book_id": 1
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "Post updated successfully"}`
+  - 401 未登录
+  - 403 非本人
+  - 404 帖子不存在
+  - 400 缺少标题/内容或 book_id 不存在
 
-```python
-# 数据不全
-jsonify({"error": "Missing user_id or user_type"}), 400
+---
 
-# 用户或管理员未找到
-jsonify({"error": "User not found"}), 404
-jsonify({"error": "Admin not found"}), 404
+### 删除帖子
 
-# 用户类型无效
-jsonify({"error": "Invalid user type"}), 400
+- **URL**：`DELETE /api/forum_posts/<post_id>`
+- **响应**：
+  - 204 成功，无内容
+  - 401 未登录
+  - 403 非本人
+  - 404 帖子不存在
 
-# 更新成功（用户）
-jsonify({"message": "User information updated successfully"}), 200
+---
 
-# 更新成功（管理员）
-jsonify({"message": "Admin information updated successfully"}), 200
+### 获取随机帖子
 
-# 服务器内部错误
-jsonify({"error": "Internal server error"}), 500
-```
+- **URL**：`GET /api/forum_posts/get_posts?limit=5`
+- **响应**：
+  - 200 成功，返回帖子列表
+  - 404 没有帖子
+
+---
+
+## 评论（Comment）
+
+### 创建评论
+
+- **URL**：`POST /api/comments/`
+- **请求体**（JSON）：
+  ```json
+  {
+    "post_id": 1,
+    "content": "string",
+    "parent_comment_id": 2   // 可选，回复某条评论
+  }
+  ```
+- **响应**：
+  - 201 成功：`{"message": "Comment created successfully"}`
+  - 400 缺少字段或 post_id/user_id 不合法
+
+---
+
+### 获取单条评论
+
+- **URL**：`GET /api/comments/<comment_id>`
+- **响应**：
+  - 200 成功
+    ```json
+    {
+      "comment_id": 1,
+      "username": "string",
+      "content": "string",
+      "comment_time": "2025-06-15T12:34:56"
+    }
+    ```
+  - 404 评论不存在
+
+---
+
+### 更新评论
+
+- **URL**：`PUT /api/comments/<comment_id>`
+- **请求体**（JSON）：
+  ```json
+  {
+    "content": "string",
+    "parent_comment_id": 2   // 可选
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "Comment updated successfully"}`
+  - 403 非本人
+  - 404 评论不存在
+  - 400 post_id/user_id 不合法
+
+---
+
+### 删除评论
+
+- **URL**：`DELETE /api/comments/<comment_id>`
+- **响应**：
+  - 204 成功：`{"message": "Comment deleted"}`
+  - 403 非本人
+  - 404 评论不存在
+
+---
+
+### 获取评论树
+
+- **URL**：`GET /api/comments/tree/<post_id>`
+- **响应**：
+  - 200 成功，返回该帖子的评论树（嵌套结构）
+    ```json
+    [
+      {
+        "comment_id": 1,
+        "username": "string",
+        "content": "string",
+        "comment_time": "2025-06-15T12:34:56",
+        "replies": [
+          {
+            "comment_id": 2,
+            "username": "string",
+            "content": "string",
+            "comment_time": "2025-06-15T12:35:00",
+            "replies": [ ... ]
+          }
+        ]
+      }
+    ]
+    ```
+
+---
+
+## 说明
+
+- 所有需要登录的接口，需先调用 `/api/login/` 登录，后续请求自动带 session。
+- 所有接口均返回标准 JSON。
+
 
 ### 4. 图书查询
 
