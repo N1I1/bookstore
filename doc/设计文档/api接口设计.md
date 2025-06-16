@@ -470,3 +470,135 @@ jsonify({"error": "Internal server error"}), 500
 ---
 
 > 所有收藏相关接口均需先登录，登录后自动识别当前用户，无需传 user_id。
+
+## 图书（Book）
+
+### 获取所有书籍
+
+- **URL**：`GET /api/books/`
+- **说明**：获取所有书籍信息
+- **响应**：
+  - 200 成功，返回书籍列表
+    ```json
+    [
+      {
+        "book_id": 1,
+        "title": "string",
+        "author": "string",
+        "isbn": "string",
+        "publisher": "string",
+        "price": 10.0,
+        "discount": 0.9,
+        "stock": 100,
+        "description": "string",
+        "image_url": "string"
+      }
+    ]
+    ```
+
+---
+
+### 获取单本书籍
+
+- **URL**：`GET /api/books/<book_id>`
+- **说明**：获取指定书籍信息
+- **响应**：
+  - 200 成功
+    ```json
+    {
+      "book_id": 1,
+      "title": "string",
+      "author": "string",
+      "isbn": "string",
+      "publisher": "string",
+      "price": 10.0,
+      "discount": 0.9,
+      "stock": 100,
+      "description": "string",
+      "image_url": "string"
+    }
+    ```
+  - 404 书籍不存在：`{"error": "Book not found"}`
+
+---
+
+### 创建新书籍
+
+- **URL**：`POST /api/books/`
+- **权限**：仅管理员（需登录，session 中有 `admin_id`）
+- **请求体**（JSON）：
+  ```json
+  {
+    "title": "string",
+    "author": "string",
+    "isbn": "string",
+    "publisher": "string",
+    "price": 10.0,
+    "discount": 0.9,
+    "stock": 100,
+    "description": "string",
+    "image_url": "string"
+  }
+  ```
+- **响应**：
+  - 201 成功：`{"message": "Book created", "book_id": 1}`
+  - 400 缺少字段：`{"error": "Missing required field: 字段名"}`
+  - 400 类型错误：`{"error": "Invalid data type"}`
+  - 400 唯一性约束冲突：`{"error": "Book already exists or unique constraint failed"}`
+  - 401 未授权：`{"error": "Unauthorized"}`
+  - 500 服务器错误：`{"error": "Server error"}`
+
+---
+
+### 更新书籍信息
+
+- **URL**：`PUT /api/books/<book_id>`
+- **权限**：仅管理员
+- **请求体**（JSON，可选字段）：
+  ```json
+  {
+    "title": "string",
+    "author": "string",
+    "isbn": "string",
+    "publisher": "string",
+    "price": 10.0,
+    "discount": 0.9,
+    "stock": 100,
+    "description": "string"
+  }
+  ```
+- **响应**：
+  - 200 成功，返回更新后的书籍信息
+    ```json
+    {
+      "book_id": 1,
+      "title": "string",
+      "author": "string",
+      "isbn": "string",
+      "publisher": "string",
+      "price": 10.0,
+      "discount": 0.9,
+      "stock": 100,
+      "description": "string"
+    }
+    ```
+  - 400 类型错误：`{"error": "Invalid data type"}`
+  - 400 唯一性约束冲突：`{"error": "Unique constraint failed"}`
+  - 401 未授权：`{"error": "Unauthorized"}`
+  - 404 书籍不存在：`{"error": "Book not found"}`
+  - 500 服务器错误：`{"error": "Server error"}`
+
+---
+
+### 删除书籍
+
+- **URL**：`DELETE /api/books/<book_id>`
+- **权限**：仅管理员
+- **响应**：
+  - 204 成功，无内容
+  - 401 未授权：`{"error": "Unauthorized"}`
+  - 404 书籍不存在：`{"error": "Book not found"}`
+
+---
+
+> 所有涉及书籍管理（新增、修改、删除）的接口均需管理员权限（session 中有 `admin_id`）。
