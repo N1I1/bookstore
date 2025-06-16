@@ -67,6 +67,27 @@ class TagView(MethodView):
         db.session.commit()
         return '', 204
 
+@tag_bp.route('/<int:tag_id>/books', methods=['GET'])
+def get_books_by_tag(tag_id):
+    tag = db.session.get(Tag, tag_id)
+    if not tag:
+        return jsonify({"error": "Tag not found"}), 404
+    books = tag.books  # 通过关系获取所有书
+    return jsonify([
+        {
+            "book_id": b.book_id,
+            "title": b.title,
+            "author": b.author,
+            "isbn": b.isbn,
+            "publisher": b.publisher,
+            "price": float(b.price),
+            "discount": float(b.discount),
+            "stock": b.stock,
+            "description": b.description,
+            "image_url": b.image_url if b.image_url else None
+        }
+        for b in books
+    ]), 200
 
 # 路由注册
 tag_api = TagView.as_view('tag_api')
