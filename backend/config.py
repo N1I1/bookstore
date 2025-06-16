@@ -16,4 +16,13 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = 'root'
+
+    # email
+    MAIL_SERVER = 'smtp.qq.com'
+    MAIL_PORT = 465
+    MAIL_USE_SSL = True
+    # MAIL_USE_TLS = True
+    MAIL_USERNAME = '**@qq.com'
+    MAIL_PASSWORD = '**'
+    MAIL_DEFAULT_SENDER = '**@qq.com'
     

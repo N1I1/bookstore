@@ -2,11 +2,13 @@ from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail
 
 from config import Config
 
 db = SQLAlchemy()
 migrate = Migrate()
+mail = Mail()
 
 def create_app():
     app = Flask(__name__)
@@ -14,6 +16,7 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
+    mail.init_app(app)
 
     CORS(app)
 
@@ -48,10 +51,12 @@ def create_app():
     from app.routes.auth.register import register_bp
     from app.routes.auth.login import login_bp
     from app.routes.auth.admin_login import admin_login_bp
+    from app.routes.services.notify import notify_bp
 
     app.register_blueprint(register_bp)
     app.register_blueprint(login_bp)
     app.register_blueprint(admin_login_bp)
+    app.register_blueprint(notify_bp)
 
 
     from app.routes.tables.admin import admin_bp
