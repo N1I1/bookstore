@@ -154,3 +154,26 @@ def test_get_browse_not_logged_in(client, test_browse):
     response = client.get(f'/api/user_browse/{test_browse.browse_id}')
     assert response.status_code == 401
     assert b"User not logged in" in response.data
+
+def test_get_user_browses(client, login_user, test_book):
+    # 先创建两条浏览记录
+    client.post('/api/user_browse/', json={'book_id': test_book.book_id})
+    client.post('/api/user_browse/', json={'book_id': test_book.book_id})  # 再次访问，更新时间
+
+    response = client.get(f'/api/user_browse/user/{login_user.user_id}')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+    assert len(data) >= 1
+    assert data[0]['user_id'] == login_user.user_id
+    assert 'browse_time' in data[0]
+
+def test_get_user_browses_not_logged_in(client, test_user):
+    response = client.get(f'/api/user_browse/user/{test_user.user_id}')
+    assert response.status_code == 401
+
+def test_get_user_browses_forbidden(client, test_user, another_user):
+    with client.session_transaction() as sess:
+        sess['user_id'] = another_user.user_id
+    response = client.get(f'/api/user_browse/user/{test_user.user_id}')
+    assert response.status_code == 403
