@@ -1,236 +1,264 @@
 <!-- filepath: c:\Users\22905\Desktop\database\bookstore\frontend\src\views\BookDetails.vue -->
 <template>
-  <div class="details-container">
-    <el-card class="details-card">
-      <!-- 左上角返回首页按钮 -->
-      <el-button class="back-btn" type="primary" @click="goHome" icon="el-icon-arrow-left" plain>
-        返回首页
+  <div class="book-details-wrapper" v-if="book">
+    <!-- 顶部操作栏：返回首页 + 购物车按钮 -->
+    <div class="book-details-header">
+      <el-button type="text" class="back-btn" @click="goHome">
+        <el-icon><i class="el-icon-back"></i></el-icon>
+        <span>返回首页</span>
       </el-button>
-      <!-- 右上角购物车图标按钮 -->
-      <el-button class="cart-btn" type="text" @click="goCart">
+      
+      <el-button type="primary" class="cart-btn" @click="goToCart">
         <el-icon><i class="el-icon-shopping-cart-full"></i></el-icon>
-        <span style="margin-left:4px;">购物车</span>
+        <span>购物车</span>
       </el-button>
-      <el-row>
-        <el-col :span="8">
-          <img :src="book.cover" class="book-cover" alt="封面" />
-        </el-col>
-        <el-col :span="16">
-          <h2>{{ book.title }}</h2>
-          <p><b>作者：</b>{{ book.author }}</p>
-          <p><b>ISBN：</b>{{ book.isbn }}</p>
-          <p><b>出版社：</b>{{ book.publisher }}</p>
-          <p><b>定价：</b>￥{{ book.price }}</p>
-          <p><b>折扣：</b>{{ book.discount * 100 }}%</p>
-          <p><b>目录：</b>{{ book.catalog }}</p>
-          <p><b>库存状态：</b>{{ book.stock > 0 ? '有货' : '无货' }}</p>
-          <el-button type="primary" :disabled="book.stock === 0" @click="addToCart(book)">
-            添加至购物车
+    </div>
+    
+    <el-card class="book-details-card">
+      <div class="book-details-main">
+        <div class="img-and-cart">
+          <img :src="book.image_url || defaultImg" class="book-img" alt="封面" />
+          
+          <!-- 图片下方添加加入购物车按钮 -->
+          <el-button 
+            type="success" 
+            class="add-to-cart-btn"
+            :disabled="book.stock <= 0"
+            @click="addToCart"
+          >
+            <el-icon><i class="el-icon-plus"></i></el-icon>
+            <span>加入购物车</span>
           </el-button>
-        </el-col>
-      </el-row>
-      <el-divider />
-      <!-- <div class="comments-section">
-        <h3>评论区</h3>
-        <el-form :model="commentForm" class="comment-form" @submit.prevent="submitComment">
-          <el-form-item>
-            <el-input
-              v-model="commentForm.content"
-              type="textarea"
-              placeholder="写下你的评论"
-              rows="2"
-              maxlength="200"
-              show-word-limit
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="submitComment">发表评论</el-button>
-          </el-form-item>
-        </el-form>
-        <el-divider />
-        <div v-if="comments.length">
-          <el-card v-for="(item, idx) in comments" :key="idx" class="comment-item">
-            <b>{{ item.user }}</b>：{{ item.content }}
-          </el-card>
         </div>
-        <div v-else class="no-comment">暂无评论</div>
-      </div> -->
-      <div class="post-area">
-        <el-card v-for="post in posts" :key="post.post_id" class="post-item">
-          <div>{{ post.content }}</div>
-          <div class="post-meta">
-            <el-button
-              type="text"
-              :icon="post.liked ? 'el-icon-star-on' : 'el-icon-star-off'"
-              @click="toggleLike(post)"
-            >
-              {{ post.like_count }}
-            </el-button>
-            <span class="post-time">{{ formatTime(post.post_time) }}</span>
+        
+        <div class="book-info">
+          <h2 class="book-title">{{ book.title }}</h2>
+          <div class="book-author">作者：{{ book.author }}</div>
+          <div class="book-isbn">ISBN：{{ book.isbn }}</div>
+          <div class="book-publisher">出版社：{{ book.publisher }}</div>
+          <div class="book-price">
+            价格：<span class="price">￥{{ book.price }}</span>
+            <span class="discount" v-if="book.discount < 1">({{ (book.discount * 10).toFixed(1) }}折)</span>
           </div>
-        </el-card>
+          <div class="book-stock">
+            库存：{{ book.stock > 0 ? book.stock : '无货' }}
+            <el-tag v-if="book.stock <= 0" type="danger" size="small" style="margin-left:8px;">售罄</el-tag>
+          </div>
+          <div class="book-desc">简介：{{ book.description || '暂无简介' }}</div>
+        </div>
       </div>
     </el-card>
   </div>
+  
+  <el-empty v-else description="未找到该书籍" />
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
 import { ElMessage } from 'element-plus'
-
-// 模拟图书数据，实际应从后端获取
-const books = [
-  {
-    id: '1',
-    title: '三体',
-    author: '刘慈欣',
-    isbn: '9787536692930',
-    publisher: '重庆出版社',
-    price: 49.9,
-    discount: 0.8,
-    catalog: '科幻小说',
-    stock: 20,
-    cover: 'https://img1.doubanio.com/view/subject/l/public/s33445566.jpg'
-  },
-  // ...更多图书
-]
 
 const route = useRoute()
 const router = useRouter()
-const bookId = route.params.id
-const book = ref(books.find(b => String(b.id) === String(bookId)) || {})
+const book = ref(null)
+const defaultImg = 'https://img1.baidu.com/it/u=1609036816,3547813773&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=750'
 
-// 示例数据，实际应通过API获取
-const posts = ref([
-  {
-    post_id: 1,
-    content: '三体真的很震撼！',
-    post_time: '2024-06-16 15:00',
-    like_count: 5,
-    liked: false // 当前用户是否已点赞
-  },
-  {
-    post_id: 2,
-    content: '活着让我感动落泪。',
-    post_time: '2024-06-15 10:00',
-    like_count: 3,
-    liked: true
+onMounted(async () => {
+  const bookId = route.params.id
+  try {
+    // 获取书籍详情
+    const res = await axios.get(`/api/books/${bookId}`)
+    book.value = res.data
+    
+    // 记录浏览
+    try {
+      await axios.post('/api/user_browse/', { book_id: bookId }, { withCredentials: true })
+    } catch (err) {
+      console.warn('记录浏览失败:', err)
+    }
+  } catch (err) {
+    book.value = null
+    if (err.response && err.response.status === 404) {
+      ElMessage.warning('未找到该书籍')
+    } else {
+      ElMessage.error('获取书籍信息失败')
+    }
   }
-])
-const commentForm = ref({ content: '' })
+})
 
-function formatTime(time) {
-  return time.replace('T', ' ').slice(0, 16)
-}
-
-function toggleLike(post) {
-  // 实际应调用后端API，传递 post_id 和 user_id
-  if (post.liked) {
-    post.like_count--
-    post.liked = false
-    // await api.delete('/post/like', { post_id: post.post_id, user_id: ... })
-    ElMessage.info('已取消点赞')
-  } else {
-    post.like_count++
-    post.liked = true
-    // await api.post('/post/like', { post_id: post.post_id, user_id: ... })
-    ElMessage.success('点赞成功')
-  }
-}
-
-function submitComment() {
-  if (!commentForm.value.content) {
-    ElMessage.warning('评论不能为空')
-    return
-  }
-  comments.value.unshift({
-    user: '当前用户', // 实际应取当前登录用户
-    content: commentForm.value.content
-  })
-  commentForm.value.content = ''
-  ElMessage.success('评论成功')
-}
-
-// 添加至购物车（这里用window.cart模拟，实际建议用pinia/vuex或localStorage）
-function addToCart(book) {
-  window.cart = window.cart || []
-  if (!window.cart.find(item => item.id === book.id)) {
-    window.cart.push(book)
-    ElMessage.success('已添加至购物车')
-  } else {
-    ElMessage.info('该书已在购物车中')
-  }
-}
-
+// 返回首页
 function goHome() {
   router.push('/home')
 }
-function goCart() {
+
+// 跳转购物车
+function goToCart() {
   router.push('/cart')
+}
+
+// 加入购物车
+async function addToCart() {
+  if (!book.value) return
+  
+  try {
+    const response = await axios.post('/api/cart/add', {
+      book_id: book.value.book_id,
+      quantity: 1
+    }, {
+      withCredentials: true
+    })
+    
+    if (response.data.success) {
+      ElMessage.success('已加入购物车')
+    } else {
+      ElMessage.warning(response.data.message || '加入购物车失败')
+    }
+  } catch (error) {
+    console.error('加入购物车异常:', error)
+    if (error.response && error.response.status === 401) {
+      ElMessage.warning('请先登录')
+      router.push('/login')
+    } else {
+      ElMessage.error('操作失败，请重试')
+    }
+  }
 }
 </script>
 
 <style scoped>
-.details-container {
+.book-details-wrapper {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 24px;
+}
+
+/* 顶部操作栏样式 */
+.book-details-header {
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 80vh;
-  background: #f5f5f5;
-  padding-top: 40px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
 }
-.details-card {
-  width: 800px;
-  padding: 30px 20px;
-  position: relative;
-}
+
 .back-btn {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 10;
+  color: #606266;
+  font-size: 16px;
 }
-.cart-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 10;
+
+.back-btn:hover {
   color: #409eff;
-  font-size: 18px;
 }
-.book-cover {
+
+.cart-btn {
+  background-color: #e6a23c;
+  border-color: #e6a23c;
+}
+
+.cart-btn:hover {
+  background-color: #e6bc5c;
+  border-color: #e6bc5c;
+}
+
+/* 书籍详情卡片 */
+.book-details-card {
+  padding: 32px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.book-details-main {
+  display: flex;
+  gap: 32px;
+}
+
+.img-and-cart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 200px;
+}
+
+.book-img {
   width: 180px;
-  height: 240px;
+  height: 260px;
   object-fit: cover;
   border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  background: #f5f5f5;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-.comments-section {
-  margin-top: 30px;
+
+/* 加入购物车按钮样式 */
+.add-to-cart-btn {
+  margin-top: 20px;
+  width: 100%;
+  background-color: #67c23a;
+  border-color: #67c23a;
 }
-.comment-form {
-  margin-bottom: 10px;
+
+.add-to-cart-btn:hover {
+  background-color: #85ce61;
+  border-color: #85ce61;
 }
-.comment-item {
-  margin-bottom: 10px;
+
+.add-to-cart-btn:disabled {
+  background-color: #ccc;
+  border-color: #bbb;
+  cursor: not-allowed;
 }
-.no-comment {
-  color: #888;
-  text-align: center;
-  margin: 20px 0;
-}
-.post-item {
-  margin-bottom: 16px;
-}
-.post-meta {
+
+.book-info {
+  flex: 1;
   display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 8px;
+  flex-direction: column;
+  gap: 12px;
 }
-.post-time {
-  color: #888;
-  font-size: 12px;
+
+.book-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #409eff;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.book-author,
+.book-isbn,
+.book-publisher,
+.book-price,
+.book-stock,
+.book-desc {
+  font-size: 16px;
+  color: #444;
+}
+
+.price {
+  color: #e67e22;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.discount {
+  color: #67c23a;
+  margin-left: 8px;
+  font-size: 16px;
+}
+
+.book-stock {
+  margin-top: 10px;
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+}
+
+.book-desc {
+  margin-top: 20px;
+  color: #666;
+  font-size: 15px;
+  line-height: 1.8;
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
 }
 </style>
