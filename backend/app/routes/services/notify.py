@@ -8,15 +8,14 @@ notify_bp = Blueprint('notify', __name__, url_prefix='/api/notify')
 
 def send_new_book_email(to_email, book_title, book_url=None):
     subject = f"新书上架通知：《{book_title}》"
-    body = f"""您好，
-
-您关注的类型有新书《{book_title}》上架啦！
-
-{f"点击这里查看详情：{book_url}\n" if book_url else ""}
-感谢您对我们的支持！
-
-—— 网上书店团队
-"""
+    detail_line = f"点击这里查看详情：{book_url}\n" if book_url else ""
+    body = (
+        f"您好，\n\n"
+        f"您关注的类型有新书《{book_title}》上架啦！\n\n"
+        f"{detail_line}"
+        "感谢您对我们的支持！\n\n"
+        "—— 网上书店团队\n"
+    )
     msg = Message(
         subject=subject,
         recipients=[to_email],
