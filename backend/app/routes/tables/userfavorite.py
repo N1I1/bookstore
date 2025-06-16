@@ -67,8 +67,6 @@ class UserFavoriteView(MethodView):
         user_id = session.get('user_id', None)
         if not user_id:
             return jsonify({"error": "User not logged in"}), 401
-        if not book_id:
-            return jsonify({"error": "Missing required field: book_id"}), 400
         # 检查收藏记录是否存在
         favorite = UserFavorite.query.filter_by(user_id=user_id, book_id=book_id).first()
         if favorite:
