@@ -110,6 +110,5 @@ def get_comment_tree(post_id):
 
 # 将 CommentView 注册到蓝图
 comment_api = CommentView.as_view('comment_api')
-comment_bp.add_url_rule('/', view_func=comment_api, methods=['GET'], defaults={'comment_id': None})
 comment_bp.add_url_rule('/', view_func=comment_api, methods=['POST'])
 comment_bp.add_url_rule('/<int:comment_id>', view_func=comment_api, methods=['GET', 'PUT', 'DELETE'])

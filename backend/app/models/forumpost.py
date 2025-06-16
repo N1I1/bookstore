@@ -7,8 +7,11 @@ class ForumPost(db.Model):
     post_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
     book_id = db.Column(db.Integer, db.ForeignKey('book.book_id'), default=None)
+    title = db.Column(db.String(255), nullable=False, default="Untitled Post")
     content = db.Column(db.Text, default=None)
     post_time = db.Column(db.DateTime, nullable=False, default=datetime.now)
     browse_count = db.Column(db.Integer, nullable=False, default=0)
+    is_deleted = db.Column(db.Boolean, default=False)
 
     comments = db.relationship('Comment', back_populates='forum_post')
+    poster = db.relationship('User', back_populates='posts')
