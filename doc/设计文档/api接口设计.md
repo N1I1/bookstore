@@ -410,3 +410,63 @@ jsonify({"error": "Internal server error"}), 500
   - 404 图书不存在
 
 - **说明**：管理员添加新书后可调用此接口，向所有用户发送新书上架通知邮件，后续需要个性化服务，设置触发器等。
+
+---
+
+## 用户收藏（UserFavorite）
+
+### 获取当前用户所有收藏
+
+- **URL**：`GET /api/user_favorites/`
+- **说明**：需登录，仅返回当前登录用户的收藏列表
+- **响应**：
+  - 200 成功，返回收藏列表
+    ```json
+    [
+      {
+        "book_id": 1,
+        "favorite_time": "2025-06-16T12:34:56"
+      }
+    ]
+    ```
+  - 401 未登录：`{"error": "User not logged in"}`
+
+---
+
+### 添加收藏
+
+- **URL**：`POST /api/user_favorites/`
+- **请求体**（JSON）：
+  ```json
+  {
+    "book_id": 1
+  }
+  ```
+- **响应**：
+  - 201 成功
+    ```json
+    {
+      "book_id": 1,
+      "favorite_time": "2025-06-16T12:34:56"
+    }
+    ```
+  - 400 缺少字段：`{"error": "Missing required field: book_id"}`
+  - 400 已收藏：`{"error": "Book already favorited"}`
+  - 404 图书不存在：`{"error": "Book not found"}`
+  - 401 未登录：`{"error": "User not logged in"}`
+
+---
+
+### 取消收藏
+
+- **URL**：`DELETE /api/user_favorites/<book_id>` 
+- **说明**：需登录，仅能取消自己的收藏
+- **响应**：
+  - 204 成功，无内容
+  - 404 收藏不存在：`{"error": "Favorite record not found"}`
+  - 401 未登录：`{"error": "User not logged in"}`
+> 注意是 **book_id**
+
+---
+
+> 所有收藏相关接口均需先登录，登录后自动识别当前用户，无需传 user_id。
