@@ -49,10 +49,10 @@
 
 ## 用户信息
 
-### 获取用户信息
+### 获取当前用户信息
 
-- **URL**：`GET /api/users/<user_id>`
-- **说明**：仅本人可查
+- **URL**：`GET /api/users/`
+- **说明**：需登录，仅返回当前登录用户的信息
 - **响应**：
   - 200 成功
     ```json
@@ -65,15 +65,14 @@
       "default_address": "string"
     }
     ```
-  - 401 未登录
-  - 403 非本人
+  - 401 未登录：`{"error": "User not logged in"}`
   - 404 用户不存在
 
 ---
 
-### 更新用户信息
+### 更新当前用户信息
 
-- **URL**：`PUT /api/users/<user_id>`
+- **URL**：`PUT /api/users/`
 - **请求体**（JSON，可选字段）：
   ```json
   {
@@ -86,23 +85,24 @@
   ```
 - **响应**：
   - 200 成功：`{"message": "User updated successfully"}`
-  - 401 未登录
-  - 403 非本人
+  - 401 未登录：`{"error": "User not logged in"}`
   - 404 用户不存在
   - 400 用户名或邮箱已存在
 
 ---
 
-### 删除用户
+### 删除当前用户
 
-- **URL**：`DELETE /api/users/<user_id>`
+- **URL**：`DELETE /api/users/`
+- **说明**：需登录，仅能删除当前登录用户
 - **响应**：
   - 204 成功，无内容
-  - 401 未登录
-  - 403 非本人
+  - 401 未登录：`{"error": "User not logged in"}`
   - 404 用户不存在
 
 > 此处可能会有问题，与 comment forum_post 表之间的关系需要再考虑一下
+
+> 所有用户信息相关接口均需先登录，登录后使用 session 识别当前用户，无需传 user_id。
 
 ---
 
