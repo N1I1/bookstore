@@ -12,13 +12,11 @@ user_bp = Blueprint('user', __name__, url_prefix='/api/users')
 
 
 class UserView(MethodView):
-    def get(self, user_id):
+    def get(self):
         """处理 GET 请求，获取用户信息"""
-        current_user_id = session.get('user_id')
-        if current_user_id is None:
+        user_id = session.get('user_id')
+        if user_id is None:
             return jsonify({"error": "User not logged in"}), 401
-        if current_user_id != user_id:
-            return jsonify({"error": "Forbidden"}), 403
         user = db.session.get(User, user_id)
         if user:
             return jsonify({
@@ -32,13 +30,11 @@ class UserView(MethodView):
         else:
             return jsonify({"error": "User not found"}), 404
 
-    def put(self, user_id):
+    def put(self):
         """处理 PUT 请求，更新用户信息"""
-        current_user_id = session.get('user_id')
-        if current_user_id is None:
+        user_id = session.get('user_id')
+        if user_id is None:
             return jsonify({"error": "User not logged in"}), 401
-        if current_user_id != user_id:
-            return jsonify({"error": "Forbidden"}), 403
         user = db.session.get(User, user_id)
         if not user:
             return jsonify({"error": "User not found"}), 404
@@ -56,13 +52,11 @@ class UserView(MethodView):
             db.session.rollback()
             return jsonify({"error": "Username or Email already exists"}), 400
 
-    def delete(self, user_id):
+    def delete(self):
         """处理 DELETE 请求，删除用户"""
-        current_user_id = session.get('user_id')
-        if current_user_id is None:
+        user_id = session.get('user_id')
+        if user_id is None:
             return jsonify({"error": "User not logged in"}), 401
-        if current_user_id != user_id:
-            return jsonify({"error": "Forbidden"}), 403
         user = db.session.get(User, user_id)
         if user:
             # 此处可能会出现问题，因 comment forum_post都有一个外键指向user，之后再考虑
@@ -75,4 +69,4 @@ class UserView(MethodView):
 
 # 将 UserView 注册到蓝图
 user_api = UserView.as_view('user_api')
-user_bp.add_url_rule('/<int:user_id>', view_func=user_api, methods=['GET', 'PUT', 'DELETE'])
+user_bp.add_url_rule('/', view_func=user_api, methods=['GET', 'PUT', 'DELETE'])
