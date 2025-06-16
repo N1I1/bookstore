@@ -31,7 +31,7 @@ def load_books_from_csv(file_path):
                 discount=row['discount'],
                 stock=row['stock'],
                 description=row['description'],
-                # image_url=row['image_url']  # 添加 image_url 字段
+                image_url=row['image_url']  # 添加 image_url 字段
             )
             session.add(book)
     session.commit()

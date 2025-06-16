@@ -12,3 +12,4 @@ class Book(db.Model):
     discount = db.Column(db.Numeric(5, 2), nullable=False)
     stock = db.Column(db.Integer, nullable=False)
     description = db.Column(db.Text, default=None)
+    image_url = db.Column(db.String(255), default=None)
