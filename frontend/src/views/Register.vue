@@ -1,30 +1,27 @@
 <!-- filepath: c:\Users\22905\Desktop\database\bookstore\frontend\src\views\Register.vue -->
 <template>
-  <div class="register-container">
+  <div class="register-wrapper">
     <el-card class="register-card">
-      <h2>注册账号</h2>
-      <el-form :model="form" :rules="rules" ref="registerFormRef" label-width="70px">
-        <el-form-item label="用户名" prop="username">
-          <el-input
-            v-model="form.username"
-            placeholder="用户名"
-            prefix-icon="el-icon-user"
-            clearable
-          />
+      <!-- 左上角返回登录按钮 -->
+      <el-button class="back-login-btn" type="text" @click="goLogin" icon="el-icon-arrow-left">
+        返回登录
+      </el-button>
+      <h2 class="register-title">用户注册</h2>
+      <el-form :model="form" ref="registerForm" label-width="80px" class="register-form">
+        <el-form-item label="用户名" prop="username" required>
+          <el-input v-model="form.username" />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="密码"
-            prefix-icon="el-icon-lock"
-            show-password
-            clearable
-          />
+        <el-form-item label="密码" prop="password" required>
+          <el-input v-model="form.password" type="password" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email" required>
+          <el-input v-model="form.email" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone" required>
+          <el-input v-model="form.phone" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="onRegister">注册</el-button>
-          <el-button @click="goLogin" type="text">返回登录</el-button>
+          <el-button type="primary" @click="register">注册</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -34,31 +31,31 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
-const registerFormRef = ref(null)
 const form = ref({
   username: '',
-  password: ''
+  password: '',
+  email: '',
+  phone: ''
 })
 
-const rules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' }
-  ]
-}
-
-function onRegister() {
-  registerFormRef.value.validate((valid) => {
-    if (valid) {
-      ElMessage.success('注册成功！')
-      router.push('/login')
+async function register() {
+  try {
+    const res = await axios.post('/api/register/', form.value)
+    if (res.status === 201) {
+      ElMessage.success('注册成功')
+      router.push('/home')
     }
-  })
+  } catch (err) {
+    if (err.response && err.response.status === 400) {
+      ElMessage.error(err.response.data.message || '注册失败')
+    } else {
+      ElMessage.error('网络错误')
+    }
+  }
 }
 
 function goLogin() {
@@ -67,15 +64,37 @@ function goLogin() {
 </script>
 
 <style scoped>
-.register-container {
+.register-wrapper {
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 100vh;
-  background: #f5f5f5;
+  justify-content: center;
+  background: #f5f7fa;
 }
 .register-card {
-  width: 350px;
-  padding: 30px 20px;
+  width: 400px;
+  padding: 32px 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  background: #fff;
+  position: relative;
+}
+.back-login-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  color: #409eff;
+  font-size: 15px;
+}
+.register-title {
+  text-align: center;
+  margin-bottom: 24px;
+  font-weight: bold;
+  font-size: 24px;
+  color: #409eff;
+  letter-spacing: 2px;
+}
+.register-form {
+  margin-top: 0;
 }
 </style>

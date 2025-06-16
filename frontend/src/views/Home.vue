@@ -92,6 +92,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
@@ -210,8 +211,16 @@ function goCart() {
 function goUserInfo() {
   router.push('/user')
 }
-function logout() {
-  router.push('/login')
+async function logout() {
+  try {
+    const res = await axios.post('/api/login/logout', {}, { withCredentials: true })
+    if (res.status === 200) {
+      ElMessage.success('退出登录成功')
+      router.push('/home')
+    }
+  } catch (err) {
+    ElMessage.error('退出登录失败')
+  }
 }
 </script>
 
