@@ -4,6 +4,16 @@
     <el-header class="header">
       <div class="logo">网上书店</div>
       <div class="header-actions">
+        <!-- 新增：浏览记录按钮 -->
+        <el-button type="text" class="history-btn" @click="goBrowse">
+          <el-icon><i class="el-icon-view"></i></el-icon>
+          <span style="margin-left:4px;">浏览记录</span>
+        </el-button>
+        <!-- 新增：收藏夹按钮 -->
+        <el-button type="text" class="favorite-btn" @click="goFavorite">
+          <el-icon><i class="el-icon-star-on"></i></el-icon>
+          <span style="margin-left:4px;">收藏夹</span>
+        </el-button>
         <el-button type="text" class="cart-btn" @click="goCart">
           <el-icon><i class="el-icon-shopping-cart-full"></i></el-icon>
           <span style="margin-left:4px;">购物车</span>
@@ -63,7 +73,7 @@
               v-for="post in topPosts"
               :key="post.post_id"
               class="forum-post-item"
-              @click="goPost(post.post_id)"
+              @click="goBookDetails(post.book_id)"
             >
               <div class="forum-content">{{ post.content }}</div>
               <div class="forum-meta">
@@ -175,10 +185,6 @@ const topPosts = computed(() =>
     .slice(0, 10)
 )
 
-function goPost(postId) {
-  router.push(`/forum/${postId}`)
-}
-
 function formatTime(time) {
   // 简单格式化，实际可用dayjs等库
   return time.replace('T', ' ').slice(0, 16)
@@ -186,6 +192,13 @@ function formatTime(time) {
 
 function handleTagSelect(tag) {
   activeTag.value = tag
+}
+
+function goBrowse() {
+  router.push('/browse')
+}
+function goFavorite() {
+  router.push('/favorite')
 }
 
 function goBookDetails(id) {
@@ -221,7 +234,7 @@ function logout() {
   align-items: center;
   gap: 10px;
 }
-.cart-btn {
+.cart-btn, .history-btn, .favorite-btn {
   color: #fff;
   font-size: 18px;
 }
