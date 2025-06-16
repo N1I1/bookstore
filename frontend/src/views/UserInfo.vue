@@ -2,6 +2,14 @@
 <template>
   <div class="user-info-wrapper">
     <el-card class="user-info-card">
+      <el-button
+        class="back-home-btn"
+        type="text"
+        icon="el-icon-arrow-left"
+        @click="goHome"
+      >
+        返回首页
+      </el-button>
       <h2 class="user-info-title">个人信息</h2>
       <el-form :model="user" :rules="rules" ref="userForm" label-width="100px" class="user-info-form">
         <el-form-item label="用户名" prop="username">
@@ -37,6 +45,8 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 const user = ref({
   username: '',
@@ -49,7 +59,7 @@ const user = ref({
 
 onMounted(async () => {
   try {
-    const res = await axios.get('/api/users/<user_id>', { withCredentials: true })
+    const res = await axios.get('/api/users/', { withCredentials: true })
     if (res.status === 200) {
       Object.assign(user.value, res.data)
     }
@@ -67,17 +77,17 @@ onMounted(async () => {
 })
 
 async function updateUser() {
-  try {
-    // 只提交有变动的字段
-    const updateData = {
-      username: user.value.username,
-      email: user.value.email,
-      phone: user.value.phone,
-      default_address: user.value.default_address
-    }
-    if (user.value.password) updateData.password = user.value.password
+  // 只提交有变动的字段
+  const updateData = {
+    username: user.value.username,
+    email: user.value.email,
+    phone: user.value.phone,
+    default_address: user.value.default_address
+  }
+  if (user.value.password) updateData.password = user.value.password
 
-    const res = await axios.put(`/api/users/${userId}`, updateData, { withCredentials: true })
+  try {
+    const res = await axios.put('/api/users/', updateData, { withCredentials: true })
     if (res.status === 200) {
       ElMessage.success('信息修改成功')
       user.value.password = ''
@@ -95,6 +105,9 @@ async function updateUser() {
       ElMessage.error('修改失败')
     }
   }
+}
+function goHome() {
+  router.push('/home')
 }
 </script>
 
@@ -123,5 +136,12 @@ async function updateUser() {
 }
 .user-info-form {
   margin-top: 0;
+}
+.back-home-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  color: #409eff;
+  font-size: 15px;
 }
 </style>
