@@ -65,32 +65,23 @@
         </el-row>
       </div>
       <!-- 右侧论坛热门帖子区 -->
-      <div class="forum-sidebar">
-        <el-card class="forum-card">
-          <h3 style="margin-bottom: 16px;">热门帖子</h3>
-          <el-scrollbar height="500px">
-            <div
-              v-for="post in topPosts"
-              :key="post.post_id"
-              class="forum-post-item"
-              @click="goBookDetails(post.book_id)"
-            >
-              <div class="forum-content">{{ post.content }}</div>
-              <div class="forum-meta">
-                <span class="forum-time">{{ formatTime(post.post_time) }}</span>
-                <span class="forum-browse">浏览：{{ post.browse_count }}</span>
-              </div>
-            </div>
-            <div v-if="!topPosts.length" class="no-post">暂无热门帖子</div>
-          </el-scrollbar>
-        </el-card>
-      </div>
+      <el-card class="forum-posts-card">
+        <h3 class="forum-title">论坛推荐帖子</h3>
+        <el-skeleton v-if="loading" rows="5" animated />
+        <el-empty v-else-if="posts.length === 0" description="暂无帖子" />
+        <div v-else class="forum-posts-list">
+          <div v-for="post in posts" :key="post.id" class="forum-post-item">
+            <div class="post-title">{{ post.title }}</div>
+            <div class="post-content">{{ post.content }}</div>
+          </div>
+        </div>
+      </el-card>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
@@ -157,39 +148,19 @@ const filteredBooks = computed(() => {
   return result
 })
 
-// 模拟后端获取帖子数据，实际应通过API获取
-const forumPosts = ref([
-  {
-    post_id: 1,
-    user_id: 2,
-    book_id: 1,
-    content: '三体真的很震撼，强烈推荐！',
-    post_time: '2024-06-01 12:30:00',
-    browse_count: 120
-  },
-  {
-    post_id: 2,
-    user_id: 3,
-    book_id: 2,
-    content: '活着让我感动落泪。',
-    post_time: '2024-06-10 09:15:00',
-    browse_count: 98
-  },
-  // ...更多帖子
-])
+const posts = ref([])
+const loading = ref(true)
 
-// 取浏览量前十的帖子
-const topPosts = computed(() =>
-  forumPosts.value
-    .slice()
-    .sort((a, b) => b.browse_count - a.browse_count)
-    .slice(0, 10)
-)
-
-function formatTime(time) {
-  // 简单格式化，实际可用dayjs等库
-  return time.replace('T', ' ').slice(0, 16)
-}
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/forum_posts/get_posts?limit=5', { params: { limit: 5 } })
+    posts.value = res.data
+  } catch (err) {
+    posts.value = []
+  } finally {
+    loading.value = false
+  }
+})
 
 function handleTagSelect(tag) {
   activeTag.value = tag
@@ -312,39 +283,34 @@ async function logout() {
   display: flex;
   margin-top: 20px;
 }
-.forum-sidebar {
-  width: 320px;
-  margin-left: 30px;
+.forum-posts-card {
+  width: 350px;
+  margin-left: 24px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
 }
-.forum-card {
-  min-height: 200px;
-  max-height: 600px;
-  overflow: hidden;
+.forum-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  color: #409eff;
+}
+.forum-posts-list {
+  padding: 0;
 }
 .forum-post-item {
-  padding: 12px 8px;
+  margin-bottom: 16px;
   border-bottom: 1px solid #f0f0f0;
-  cursor: pointer;
-  transition: background 0.2s;
+  padding-bottom: 8px;
 }
-.forum-post-item:hover {
-  background: #f5faff;
-}
-.forum-content {
-  font-size: 15px;
+.post-title {
+  font-weight: bold;
   color: #333;
-  margin-bottom: 6px;
-  word-break: break-all;
 }
-.forum-meta {
-  font-size: 12px;
-  color: #888;
-  display: flex;
-  justify-content: space-between;
-}
-.no-post {
-  text-align: center;
-  color: #aaa;
-  margin: 20px 0;
+.post-content {
+  color: #666;
+  font-size: 14px;
+  margin-top: 4px;
 }
 </style>
