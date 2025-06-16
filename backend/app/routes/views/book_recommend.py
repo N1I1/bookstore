@@ -9,9 +9,10 @@ from collections import Counter
 book_recommend_bp = Blueprint('recommend_books', __name__, url_prefix='/api/recommend_books')
 
 class BookRecommendView(MethodView):
-    def get(self):
+    def post(self):
         # 获取请求参数
-        user_id = request.args.get('user_id', type=int)
+        data = request.json
+        user_id = data.get('user_id')
 
         # 验证输入
         if not user_id:
@@ -29,7 +30,7 @@ class BookRecommendView(MethodView):
                        [favorite.book_id for favorite in recent_favorites]
 
             # Step 2: 统计作者出现次数
-            authors = [Book.query.get(book_id).author for book_id in book_ids]
+            authors = [db.session.get(Book, book_id).author for book_id in book_ids]
             most_common_author = Counter(authors).most_common(1)[0][0] if authors else None
 
             # Step 3: 统计标签出现次数
@@ -77,4 +78,4 @@ class BookRecommendView(MethodView):
             return jsonify({"error": str(e)}), 500
 
 # 注册视图
-book_recommend_bp.add_url_rule('/recommend', view_func=BookRecommendView.as_view('recommend_books'))
+book_recommend_bp.add_url_rule('/', view_func=BookRecommendView.as_view('recommend_books'))
