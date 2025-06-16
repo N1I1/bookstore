@@ -4,6 +4,16 @@
     <el-header class="header">
       <div class="logo">网上书店</div>
       <div class="header-actions">
+        <!-- 新增：浏览记录按钮 -->
+        <el-button type="text" class="history-btn" @click="goBrowse">
+          <el-icon><i class="el-icon-view"></i></el-icon>
+          <span style="margin-left:4px;">浏览记录</span>
+        </el-button>
+        <!-- 新增：收藏夹按钮 -->
+        <el-button type="text" class="favorite-btn" @click="goFavorite">
+          <el-icon><i class="el-icon-star-on"></i></el-icon>
+          <span style="margin-left:4px;">收藏夹</span>
+        </el-button>
         <el-button type="text" class="cart-btn" @click="goCart">
           <el-icon><i class="el-icon-shopping-cart-full"></i></el-icon>
           <span style="margin-left:4px;">购物车</span>
@@ -53,6 +63,27 @@
             </el-card>
           </el-col>
         </el-row>
+      </div>
+      <!-- 右侧论坛热门帖子区 -->
+      <div class="forum-sidebar">
+        <el-card class="forum-card">
+          <h3 style="margin-bottom: 16px;">热门帖子</h3>
+          <el-scrollbar height="500px">
+            <div
+              v-for="post in topPosts"
+              :key="post.post_id"
+              class="forum-post-item"
+              @click="goBookDetails(post.book_id)"
+            >
+              <div class="forum-content">{{ post.content }}</div>
+              <div class="forum-meta">
+                <span class="forum-time">{{ formatTime(post.post_time) }}</span>
+                <span class="forum-browse">浏览：{{ post.browse_count }}</span>
+              </div>
+            </div>
+            <div v-if="!topPosts.length" class="no-post">暂无热门帖子</div>
+          </el-scrollbar>
+        </el-card>
       </div>
     </div>
   </div>
@@ -125,8 +156,49 @@ const filteredBooks = computed(() => {
   return result
 })
 
+// 模拟后端获取帖子数据，实际应通过API获取
+const forumPosts = ref([
+  {
+    post_id: 1,
+    user_id: 2,
+    book_id: 1,
+    content: '三体真的很震撼，强烈推荐！',
+    post_time: '2024-06-01 12:30:00',
+    browse_count: 120
+  },
+  {
+    post_id: 2,
+    user_id: 3,
+    book_id: 2,
+    content: '活着让我感动落泪。',
+    post_time: '2024-06-10 09:15:00',
+    browse_count: 98
+  },
+  // ...更多帖子
+])
+
+// 取浏览量前十的帖子
+const topPosts = computed(() =>
+  forumPosts.value
+    .slice()
+    .sort((a, b) => b.browse_count - a.browse_count)
+    .slice(0, 10)
+)
+
+function formatTime(time) {
+  // 简单格式化，实际可用dayjs等库
+  return time.replace('T', ' ').slice(0, 16)
+}
+
 function handleTagSelect(tag) {
   activeTag.value = tag
+}
+
+function goBrowse() {
+  router.push('/browse')
+}
+function goFavorite() {
+  router.push('/favorite')
 }
 
 function goBookDetails(id) {
@@ -162,7 +234,7 @@ function logout() {
   align-items: center;
   gap: 10px;
 }
-.cart-btn {
+.cart-btn, .history-btn, .favorite-btn {
   color: #fff;
   font-size: 18px;
 }
@@ -226,5 +298,44 @@ function logout() {
   color: #e4393c;
   font-size: 16px;
   margin: 5px 0 10px 0;
+}
+.main-content {
+  display: flex;
+  margin-top: 20px;
+}
+.forum-sidebar {
+  width: 320px;
+  margin-left: 30px;
+}
+.forum-card {
+  min-height: 200px;
+  max-height: 600px;
+  overflow: hidden;
+}
+.forum-post-item {
+  padding: 12px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.forum-post-item:hover {
+  background: #f5faff;
+}
+.forum-content {
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+.forum-meta {
+  font-size: 12px;
+  color: #888;
+  display: flex;
+  justify-content: space-between;
+}
+.no-post {
+  text-align: center;
+  color: #aaa;
+  margin: 20px 0;
 }
 </style>
