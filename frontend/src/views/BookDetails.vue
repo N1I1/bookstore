@@ -30,7 +30,7 @@
         </el-col>
       </el-row>
       <el-divider />
-      <div class="comments-section">
+      <!-- <div class="comments-section">
         <h3>评论区</h3>
         <el-form :model="commentForm" class="comment-form" @submit.prevent="submitComment">
           <el-form-item>
@@ -54,6 +54,21 @@
           </el-card>
         </div>
         <div v-else class="no-comment">暂无评论</div>
+      </div> -->
+      <div class="post-area">
+        <el-card v-for="post in posts" :key="post.post_id" class="post-item">
+          <div>{{ post.content }}</div>
+          <div class="post-meta">
+            <el-button
+              type="text"
+              :icon="post.liked ? 'el-icon-star-on' : 'el-icon-star-off'"
+              @click="toggleLike(post)"
+            >
+              {{ post.like_count }}
+            </el-button>
+            <span class="post-time">{{ formatTime(post.post_time) }}</span>
+          </div>
+        </el-card>
       </div>
     </el-card>
   </div>
@@ -86,11 +101,43 @@ const router = useRouter()
 const bookId = route.params.id
 const book = ref(books.find(b => String(b.id) === String(bookId)) || {})
 
-// 评论区
-const comments = ref([
-  { user: '读者A', content: '非常精彩的小说！' }
+// 示例数据，实际应通过API获取
+const posts = ref([
+  {
+    post_id: 1,
+    content: '三体真的很震撼！',
+    post_time: '2024-06-16 15:00',
+    like_count: 5,
+    liked: false // 当前用户是否已点赞
+  },
+  {
+    post_id: 2,
+    content: '活着让我感动落泪。',
+    post_time: '2024-06-15 10:00',
+    like_count: 3,
+    liked: true
+  }
 ])
 const commentForm = ref({ content: '' })
+
+function formatTime(time) {
+  return time.replace('T', ' ').slice(0, 16)
+}
+
+function toggleLike(post) {
+  // 实际应调用后端API，传递 post_id 和 user_id
+  if (post.liked) {
+    post.like_count--
+    post.liked = false
+    // await api.delete('/post/like', { post_id: post.post_id, user_id: ... })
+    ElMessage.info('已取消点赞')
+  } else {
+    post.like_count++
+    post.liked = true
+    // await api.post('/post/like', { post_id: post.post_id, user_id: ... })
+    ElMessage.success('点赞成功')
+  }
+}
 
 function submitComment() {
   if (!commentForm.value.content) {
@@ -172,5 +219,18 @@ function goCart() {
   color: #888;
   text-align: center;
   margin: 20px 0;
+}
+.post-item {
+  margin-bottom: 16px;
+}
+.post-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+.post-time {
+  color: #888;
+  font-size: 12px;
 }
 </style>

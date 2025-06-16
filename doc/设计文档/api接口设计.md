@@ -276,6 +276,82 @@
 
 ---
 
+## 用户浏览记录（UserBrowse）
+
+### 创建浏览记录
+
+- **URL**：`POST /api/user_browse/`
+- **请求体**（JSON）：
+  ```json
+  {
+    "book_id": 1
+  }
+  ```
+- **响应**：
+  - 200 成功
+    ```json
+    {
+      "browse_id": 1,
+      "user_id": 1,
+      "book_id": 1,
+      "browse_time": "2025-06-15T12:34:56"
+    }
+    ```
+  - 401 未登录
+  - 400 缺少 book_id 或重复浏览记录
+
+---
+
+### 获取单条浏览记录
+
+- **URL**：`GET /api/user_browse/<browse_id>`
+- **响应**：
+  - 200 成功
+    ```json
+    {
+      "browse_id": 1,
+      "user_id": 1,
+      "book_id": 1,
+      "browse_time": "2025-06-15T12:34:56"
+    }
+    ```
+  - 401 未登录
+  - 403 非本人
+  - 404 记录不存在
+
+---
+
+### 删除浏览记录
+
+- **URL**：`DELETE /api/user_browse/<browse_id>`
+- **响应**：
+  - 204 成功，无内容
+  - 401 未登录
+  - 404 记录不存在
+
+---
+
+### 获取用户所有浏览记录
+
+- **URL**：`GET /api/user_browse/user/<user_id>`
+- **说明**：仅本人可查
+- **响应**：
+  - 200 成功，返回浏览记录列表
+    ```json
+    [
+      {
+        "browse_id": 1,
+        "user_id": 1,
+        "book_id": 1,
+        "browse_time": "2025-06-15T12:34:56"
+      }
+    ]
+    ```
+  - 401 未登录
+  - 403 非本人
+
+---
+
 ## 说明
 
 - 所有需要登录的接口，需先调用 `/api/login/` 登录，后续请求自动带 session。
@@ -314,3 +390,83 @@ jsonify({"message": "No books found"}), 404
 # 服务器内部错误
 jsonify({"error": "Internal server error"}), 500
 ```
+
+---
+
+## 通知相关
+
+### 主动触发新书通知
+
+- **URL**：`POST /api/notify/new_book`
+- **请求体**（JSON）：
+  ```json
+  {
+    "book_id": 123
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "已向N位用户发送新书通知"}`
+  - 400 缺少 book_id
+  - 404 图书不存在
+
+- **说明**：管理员添加新书后可调用此接口，向所有用户发送新书上架通知邮件，后续需要个性化服务，设置触发器等。
+
+---
+
+## 用户收藏（UserFavorite）
+
+### 获取当前用户所有收藏
+
+- **URL**：`GET /api/user_favorites/`
+- **说明**：需登录，仅返回当前登录用户的收藏列表
+- **响应**：
+  - 200 成功，返回收藏列表
+    ```json
+    [
+      {
+        "book_id": 1,
+        "favorite_time": "2025-06-16T12:34:56"
+      }
+    ]
+    ```
+  - 401 未登录：`{"error": "User not logged in"}`
+
+---
+
+### 添加收藏
+
+- **URL**：`POST /api/user_favorites/`
+- **请求体**（JSON）：
+  ```json
+  {
+    "book_id": 1
+  }
+  ```
+- **响应**：
+  - 201 成功
+    ```json
+    {
+      "book_id": 1,
+      "favorite_time": "2025-06-16T12:34:56"
+    }
+    ```
+  - 400 缺少字段：`{"error": "Missing required field: book_id"}`
+  - 400 已收藏：`{"error": "Book already favorited"}`
+  - 404 图书不存在：`{"error": "Book not found"}`
+  - 401 未登录：`{"error": "User not logged in"}`
+
+---
+
+### 取消收藏
+
+- **URL**：`DELETE /api/user_favorites/<book_id>` 
+- **说明**：需登录，仅能取消自己的收藏
+- **响应**：
+  - 204 成功，无内容
+  - 404 收藏不存在：`{"error": "Favorite record not found"}`
+  - 401 未登录：`{"error": "User not logged in"}`
+> 注意是 **book_id**
+
+---
+
+> 所有收藏相关接口均需先登录，登录后自动识别当前用户，无需传 user_id。
