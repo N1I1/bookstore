@@ -1,6 +1,7 @@
 import pytest
 from app.models.tag import Tag
 from app import db
+from app.models.book import Book
 
 @pytest.fixture
 def admin_user(app):
@@ -127,3 +128,59 @@ def test_delete_tag_not_found(client, login_admin):
 def test_delete_tag_unauthorized(client, test_tag):
     response = client.delete(f'/api/tags/{test_tag.tag_id}')
     assert response.status_code == 401
+
+@pytest.fixture
+def tag_with_books(app):
+    tag = Tag(name='有书标签')
+    db.session.add(tag)
+    db.session.commit()
+    book1 = Book(
+        title='书1',
+        author='作者1',
+        isbn='isbn1',
+        publisher='出版社1',
+        price=10.0,
+        discount=1.0,
+        stock=5,
+        description='desc1'
+    )
+    book2 = Book(
+        title='书2',
+        author='作者2',
+        isbn='isbn2',
+        publisher='出版社2',
+        price=20.0,
+        discount=0.8,
+        stock=3,
+        description='desc2'
+    )
+    db.session.add(book1)
+    db.session.add(book2)
+    db.session.commit()
+    # 关联
+    tag.books.append(book1)
+    tag.books.append(book2)
+    db.session.commit()
+    yield tag, [book1, book2]
+    # 清理
+    tag.books.clear()
+    db.session.delete(book1)
+    db.session.delete(book2)
+    db.session.delete(tag)
+    db.session.commit()
+
+def test_get_books_by_tag(client, tag_with_books):
+    tag, books = tag_with_books
+    response = client.get(f'/api/tags/{tag.tag_id}/books')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+    assert len(data) == 2
+    book_ids = [b['book_id'] for b in data]
+    assert books[0].book_id in book_ids
+    assert books[1].book_id in book_ids
+
+def test_get_books_by_tag_not_found(client):
+    response = client.get('/api/tags/99999/books')
+    assert response.status_code == 404
+    assert b"Tag not found" in response.data
