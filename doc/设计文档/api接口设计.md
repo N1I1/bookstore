@@ -147,6 +147,24 @@
 
 ### 通过 book_id 获取相关帖子
 
+- **URL**：`GET /api/forum_posts/by_book/<book_id>`
+- **说明**：获取指定图书下的所有帖子
+- **响应**：
+  - 200 成功，返回该图书的帖子列表
+    ```json
+    [
+      {
+        "post_id": 1,
+        "title": "帖子标题",
+        "content": "帖子内容",
+        "post_time": "2025-06-17T12:34:56",
+        "browse_count": 10,
+        "user_id": 1
+      }
+    ]
+    ```
+  - 404 未找到帖子：`{"error": "No posts found for this book"}`
+
 ### 通过 user_id 获取用户所有帖子
 
 - **URL**：`GET /api/forum_posts/by_user/<user_id>`
