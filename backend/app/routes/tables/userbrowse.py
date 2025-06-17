@@ -77,14 +77,12 @@ class UserBrowseView(MethodView):
         except IntegrityError:
             db.session.rollback()
             return jsonify({"error": "Failed to delete browse record"}), 400
-@user_browse_bp.route('/user/<int:user_id>', methods=['GET'])
-def get_user_browses(user_id):
+@user_browse_bp.route('/user/', methods=['GET'])
+def get_user_browses():
     """获取指定用户的所有浏览记录（仅本人可查）"""
-    current_user_id = session.get('user_id')
-    if current_user_id is None:
+    user_id = session.get('user_id')
+    if user_id is None:
         return jsonify({"error": "User not logged in"}), 401
-    if current_user_id != user_id:
-        return jsonify({"error": "Forbidden"}), 403
 
     browses = UserBrowse.query.filter_by(user_id=user_id).order_by(UserBrowse.browse_time.desc()).all()
     result = [
