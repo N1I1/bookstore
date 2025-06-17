@@ -12,6 +12,15 @@
         <el-icon><i class="el-icon-shopping-cart-full"></i></el-icon>
         <span>购物车</span>
       </el-button>
+      <el-button
+        type="warning"
+        class="post-btn"
+        style="margin-top: 12px; width: 120px;"
+        @click="goCreatePost"
+      >
+        <el-icon><i class="el-icon-edit"></i></el-icon>
+        <span>发帖</span>
+      </el-button>
     </div>
     
     <el-card class="book-details-card">
@@ -162,6 +171,9 @@ async function addFavorite() {
   } finally {
     favLoading.value = false
   }
+}
+function goCreatePost() {
+  router.push({ name: 'CreatePost', query: { book_id: book.value?.book_id || '' } })
 }
 </script>
 

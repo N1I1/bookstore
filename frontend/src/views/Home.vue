@@ -19,6 +19,12 @@
           </el-input>
         </div>
         
+        <!-- 发帖按钮 -->
+        <el-button type="text" class="post-btn" @click="goCreatePost">
+          <el-icon><i class="el-icon-edit"></i></el-icon>
+          <span style="margin-left:4px;">发帖</span>
+        </el-button>
+        
         <!-- 浏览记录按钮 -->
         <el-button type="text" class="history-btn" @click="goBrowse">
           <el-icon><i class="el-icon-view"></i></el-icon>
@@ -364,6 +370,10 @@ function toggleTagGroup(initial) {
   }
 }
 // 导航方法保持不变
+
+function goCreatePost() {
+  router.push({ name: 'CreatePost', query: { book_id: '' } })
+}
 
 function goBrowse() {
   router.push('/browse')
