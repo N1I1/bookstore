@@ -1,12 +1,9 @@
-<!-- filepath: c:\Users\22905\Desktop\database\bookstore\frontend\src\views\Cart.vue -->
 <template>
   <div class="cart-container">
     <el-card class="cart-card">
       <h2>购物车</h2>
       <el-table :data="cart" v-if="cart.length" style="width: 100%">
-        <el-table-column prop="title" label="书名" />
-        <el-table-column prop="author" label="作者" />
-        <el-table-column prop="price" label="单价" />
+        <el-table-column prop="book_title" label="书名" />
         <el-table-column prop="quantity" label="数量">
           <template #default="scope">
             <el-input-number
@@ -15,6 +12,11 @@
               @change="updateQuantity(scope.row)"
               size="small"
             />
+          </template>
+        </el-table-column>
+        <el-table-column prop="add_time" label="添加时间" width="180">
+          <template #default="scope">
+            {{ formatTime(scope.row.add_time) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100">
@@ -27,8 +29,15 @@
         购物车为空
       </div>
       <div class="cart-footer" v-if="cart.length">
-        <span>总价：<b>￥{{ totalPrice }}</b></span>
-        <el-button type="primary" @click="checkout">结算</el-button>
+        <el-button 
+          type="primary" 
+          @click="checkout"
+          :loading="isCheckingOut"
+          :disabled="isCheckingOut"
+        >
+          结算
+          <el-icon v-if="isCheckingOut"><i class="el-icon-loading"></i></el-icon>
+        </el-button>
       </div>
       <el-button class="back-btn" @click="goHome">返回首页</el-button>
     </el-card>
@@ -36,61 +45,90 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import axios from 'axios'
 
-// 假设通过API获取购物车数据
+// 购物车数据
 const cart = ref([])
-
+const isCheckingOut = ref(false)
 const router = useRouter()
 
-// 模拟API请求，实际应替换为后端接口
-function fetchCart() {
-  // 这里用静态数据模拟
-  cart.value = [
-    {
-      id: 1,
-      title: '三体',
-      author: '刘慈欣',
-      price: 49.9,
-      quantity: 2
-    },
-    {
-      id: 2,
-      title: '活着',
-      author: '余华',
-      price: 39.9,
-      quantity: 1
+// 从API获取购物车数据
+async function fetchCart() {
+  try {
+    const res = await axios.get('/api/user_cart/', { withCredentials: true })
+    cart.value = res.data
+  } catch (err) {
+    if (err.response && err.response.status === 401) {
+      ElMessage.warning('请先登录')
+      router.push('/login')
+    } else {
+      ElMessage.error('获取购物车失败')
     }
-  ]
+    cart.value = []
+  }
 }
 
 onMounted(() => {
   fetchCart()
 })
 
-const totalPrice = computed(() =>
-  cart.value.reduce((sum, book) => sum + Number(book.price) * Number(book.quantity), 0).toFixed(2)
-)
-
-function updateQuantity(row) {
-  // 实际应调用后端API更新数量
-  ElMessage.success('数量已更新')
+// 格式化时间显示
+function formatTime(timeStr) {
+  if (!timeStr) return ''
+  return timeStr.replace('T', ' ').slice(0, 19)
 }
 
-function removeFromCart(row) {
-  // 实际应调用后端API删除
-  cart.value = cart.value.filter(item => item.id !== row.id)
-  ElMessage.success('已移除')
+// 更新商品数量
+async function updateQuantity(row) {
+  try {
+    await axios.put('/api/user_cart/', {
+      cart_id: row.cart_id,
+      quantity: row.quantity
+    }, { withCredentials: true })
+    ElMessage.success('数量已更新')
+  } catch (err) {
+    ElMessage.error('更新数量失败')
+    // 更新失败后刷新数据还原状态
+    fetchCart()
+  }
 }
 
-function checkout() {
-  // 实际应调用后端API结算
-  ElMessage.success('结算成功！')
-  cart.value = []
+// 从购物车移除商品
+async function removeFromCart(row) {
+  try {
+    await axios.delete('/api/user_cart/', {
+      data: { cart_id: row.cart_id },
+      withCredentials: true
+    })
+    ElMessage.success('已移除')
+    // 重新获取购物车数据
+    fetchCart()
+  } catch (err) {
+    ElMessage.error('移除失败')
+  }
 }
 
+async function checkout() {
+  if (cart.value.length === 0) return;
+  
+  // 跳转到订单创建页面，携带购物车数据
+  router.push({
+    name: 'OrderCreate',
+    state: {
+      cartItems: cart.value.map(item => ({
+        book_id: item.book_id,
+        quantity: item.quantity,
+        book_title: item.book_title,
+        unit_price: item.unit_price
+      }))
+    }
+  });
+}
+
+// 返回首页
 function goHome() {
   router.push('/home')
 }
@@ -111,13 +149,12 @@ function goHome() {
 }
 .cart-footer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-end;
   margin-top: 20px;
-  font-size: 18px;
 }
 .back-btn {
   margin-top: 20px;
+  width: 100%;
 }
 .empty-tip {
   text-align: center;

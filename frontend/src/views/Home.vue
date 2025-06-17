@@ -19,6 +19,11 @@
           </el-input>
         </div>
         
+        <!-- 我的订单 -->
+        <el-button type="primary" @click="goOrderList" class="order-btn">
+          我的订单
+        </el-button>
+        
         <!-- 发帖按钮 -->
         <el-button type="text" class="post-btn" @click="goCreatePost">
           <el-icon><i class="el-icon-edit"></i></el-icon>
@@ -402,6 +407,9 @@ async function logout() {
     ElMessage.error('退出登录失败')
   }
 }
+function goOrderList() {
+  router.push({ name: 'OrderList' })
+}
 
 // 论坛帖子相关状态
 const posts = ref([])
@@ -693,4 +701,8 @@ const loading = ref(true)
   line-height: 1.5em;
 }
 /* 右侧推荐帖子内容 */
+
+.order-btn {
+  margin-left: 12px;
+}
 </style>
