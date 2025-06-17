@@ -5,10 +5,10 @@ from werkzeug.security import check_password_hash
 
 def test_register_success(client):
     response = client.post('/api/register/', json={
-        "username": "newuser",
-        "password": "newpassword",
-        "email": "newuser@example.com",
-        "phone": "12345678901"
+        "username": "cxy",
+        "password": "cxy",
+        "email": "2148741639@qq.com",
+        "phone": "13369462535"
     })
     assert response.status_code == 201
     data = response.get_json()
@@ -16,10 +16,10 @@ def test_register_success(client):
     assert "user_id" in data
 
     # 检查数据库
-    user = User.query.filter_by(username="newuser").first()
+    user = User.query.filter_by(username="cxy").first()
     assert user is not None
-    assert user.email == "newuser@example.com"
-    assert check_password_hash(user.password, "newpassword")
+    assert user.email == "2148741639@qq.com"
+    assert check_password_hash(user.password, "cxy")
     db.session.delete(user)
     db.session.commit()
 

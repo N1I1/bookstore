@@ -333,7 +333,7 @@
 
 ### 获取用户所有浏览记录
 
-- **URL**：`GET /api/user_browse/user/<user_id>`
+- **URL**：`GET /api/user_browse/user/`
 - **说明**：仅本人可查
 - **响应**：
   - 200 成功，返回浏览记录列表
@@ -602,3 +602,214 @@ jsonify({"error": "Internal server error"}), 500
 ---
 
 > 所有涉及书籍管理（新增、修改、删除）的接口均需管理员权限（session 中有 `admin_id`）。
+
+---
+
+## 标签（Tag）
+
+### 获取所有标签
+
+- **URL**：`GET /api/tags/`
+- **说明**：获取所有标签
+- **响应**：
+  - 200 成功，返回标签列表
+    ```json
+    [
+      {
+        "tag_id": 1,
+        "name": "科幻"
+      }
+    ]
+    ```
+
+---
+
+### 获取单个标签
+
+- **URL**：`GET /api/tags/<tag_id>`
+- **说明**：获取指定标签信息
+- **响应**：
+  - 200 成功
+    ```json
+    {
+      "tag_id": 1,
+      "name": "科幻"
+    }
+    ```
+  - 404 标签不存在：`{"error": "Tag not found"}`
+
+---
+
+### 创建新标签
+
+- **URL**：`POST /api/tags/`
+- **权限**：仅管理员（需登录，session 中有 `admin_id`）
+- **请求体**（JSON）：
+  ```json
+  {
+    "name": "科幻"
+  }
+  ```
+- **响应**：
+  - 201 成功：`{"tag_id": 1, "name": "科幻"}`
+  - 400 缺少字段：`{"error": "Missing required field: name"}`
+  - 400 标签名已存在：`{"error": "Tag name already exists"}`
+  - 401 未授权：`{"error": "Unauthorized"}`
+
+---
+
+### 修改标签
+
+- **URL**：`PUT /api/tags/<tag_id>`
+- **权限**：仅管理员
+- **请求体**（JSON）：
+  ```json
+  {
+    "name": "新标签名"
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"tag_id": 1, "name": "新标签名"}`
+  - 400 缺少字段：`{"error": "Missing required field: name"}`
+  - 400 标签名已存在：`{"error": "Tag name already exists"}`
+  - 401 未授权：`{"error": "Unauthorized"}`
+  - 404 标签不存在：`{"error": "Tag not found"}`
+
+---
+
+### 删除标签
+
+- **URL**：`DELETE /api/tags/<tag_id>`
+- **权限**：仅管理员
+- **响应**：
+  - 204 成功，无内容
+  - 401 未授权：`{"error": "Unauthorized"}`
+  - 404 标签不存在：`{"error": "Tag not found"}`
+
+---
+
+### 获取标签下的所有书籍
+
+- **URL**：`GET /api/tags/<tag_id>/books`
+- **说明**：获取该标签下所有关联的书籍
+- **响应**：
+  - 200 成功，返回书籍列表
+    ```json
+    [
+      {
+        "book_id": 1,
+        "title": "三体",
+        "author": "刘慈欣",
+        "isbn": "1234567890",
+        "publisher": "出版社",
+        "price": 39.9,
+        "discount": 0.9,
+        "stock": 100,
+        "description": "科幻小说",
+        "image_url": "http://example.com/cover.jpg"
+      }
+    ]
+    ```
+  - 404 标签不存在：`{"error": "Tag not found"}`
+
+---
+
+## 图书标签关联（BookTag）
+
+### 添加图书标签关联
+
+- **URL**：`POST /api/booktags/`
+- **权限**：仅管理员
+- **请求体**（JSON）：
+  ```json
+  {
+    "book_id": 1,
+    "tag_id": 2
+  }
+  ```
+- **响应**：
+  - 201 成功：`{"book_id": 1, "tag_id": 2}`
+  - 400 缺少字段：`{"error": "Missing required fields: book_id and tag_id"}`
+  - 400 已存在：`{"error": "Duplicate book tag"}`
+  - 401 未授权：`{"error": "Unauthorized"}`
+  - 500 服务器错误：`{"error": "Server error"}`
+
+---
+
+### 修改图书标签关联
+
+- **URL**：`PUT /api/booktags/`
+- **权限**：仅管理员
+- **请求体**（JSON）：
+  ```json
+  {
+    "book_id": 1,
+    "tag_id": 2,
+    "new_tag_id": 3
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"book_id": 1, "tag_id": 3}`
+  - 400 缺少字段：`{"error": "Missing required fields: book_id, tag_id, new_tag_id"}`
+  - 400 已存在：`{"error": "Duplicate book tag"}`
+  - 401 未授权：`{"error": "Unauthorized"}`
+  - 404 原关联不存在：`{"error": "Book tag relation not found"}`
+  - 500 服务器错误：`{"error": "Server error"}`
+
+---
+
+### 删除图书标签关联
+
+- **URL**：`DELETE /api/booktags/`
+- **权限**：仅管理员
+- **请求体**（JSON）：
+  ```json
+  {
+    "book_id": 1,
+    "tag_id": 2
+  }
+  ```
+- **响应**：
+  - 204 成功，无内容
+  - 400 缺少字段：`{"error": "Missing required fields: book_id and tag_id"}`
+  - 401 未授权：`{"error": "Unauthorized"}`
+  - 404 关联不存在：`{"error": "Book tag relation not found"}`
+  - 500 服务器错误：`{"error": "Server error"}`
+
+---
+
+> 所有标签和图书标签关联相关接口的管理操作均需管理员权限（session 中有 `admin_id`）。
+
+---
+
+## 推荐书籍
+
+- **URL**：`POST /api/recommend_books`
+- **权限**：仅用户
+- **请求体**（JSON，必选字段）：
+  ```json
+  {
+    "user_id": "integer"
+  }
+  ```
+- **响应**：
+  - **200 成功**：返回推荐的书籍列表
+    ```json
+    {
+      "message": "Books recommended",
+      "recommendations": [
+        {
+          "book_id": "integer",
+          "recommend_type": "string",
+          "recommend_reason": "string"
+        }
+      ]
+    }
+    ```
+  - **400 缺少用户ID**：`{"error": "Missing user ID"}`
+  - **404 无推荐结果**：`{"message": "No recommendations found"}`
+  - **500 服务器错误**：`{"error": "Server error"}`
+- **说明**：
+  - 该API根据用户最近浏览、购物车和收藏的书籍记录，分析出用户可能感兴趣的书籍特征（如作者和标签），并推荐相关书籍。
+  - 推荐结果包括书籍ID、推荐类型（作者推荐或标签推荐）以及推荐理由。
+
