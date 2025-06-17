@@ -1,9 +1,7 @@
 from app import db
-from datetime import datetime
 
-# 图书标签表
-class BookTag(db.Model):
-    __tablename__ = 'book_tag'
-    book_tag_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    book_id = db.Column(db.Integer, db.ForeignKey('book.book_id'), nullable=False)
-    tag = db.Column(db.String(50), nullable=False)
+book_tag = db.Table(
+    'book_tag',
+    db.Column('book_id', db.Integer, db.ForeignKey('book.book_id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tag.tag_id'), primary_key=True)
+)
