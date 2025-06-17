@@ -146,6 +146,8 @@ forum_post_bp.add_url_rule('/<int:post_id>', view_func=forum_post_api, methods=[
 @forum_post_bp.route('/by_book/<int:book_id>', methods=['GET'])
 def get_posts_by_book(book_id):
     posts = ForumPost.query.filter_by(book_id=book_id, is_deleted=False).all()
+    if not posts:
+        return jsonify({"error": "No posts found for this book"}), 404
     return jsonify([{
         'post_id': post.post_id,
         'title': post.title,
@@ -154,3 +156,5 @@ def get_posts_by_book(book_id):
         'browse_count': post.browse_count,
         'user_id': post.user_id
     } for post in posts])
+
+    
