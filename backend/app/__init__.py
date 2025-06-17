@@ -96,7 +96,9 @@ def create_app():
     # reigster views
 
     from app.routes.views.search_books import book_search_bp
+    from app.routes.views.book_recommend import book_recommend_bp
 
     app.register_blueprint(book_search_bp)
+    app.register_blueprint(book_recommend_bp)
     
     return app

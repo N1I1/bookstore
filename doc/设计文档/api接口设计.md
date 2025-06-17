@@ -333,7 +333,7 @@
 
 ### 获取用户所有浏览记录
 
-- **URL**：`GET /api/user_browse/user/<user_id>`
+- **URL**：`GET /api/user_browse/user/`
 - **说明**：仅本人可查
 - **响应**：
   - 200 成功，返回浏览记录列表
@@ -779,3 +779,37 @@ jsonify({"error": "Internal server error"}), 500
 ---
 
 > 所有标签和图书标签关联相关接口的管理操作均需管理员权限（session 中有 `admin_id`）。
+
+---
+
+## 推荐书籍
+
+- **URL**：`POST /api/recommend_books`
+- **权限**：仅用户
+- **请求体**（JSON，必选字段）：
+  ```json
+  {
+    "user_id": "integer"
+  }
+  ```
+- **响应**：
+  - **200 成功**：返回推荐的书籍列表
+    ```json
+    {
+      "message": "Books recommended",
+      "recommendations": [
+        {
+          "book_id": "integer",
+          "recommend_type": "string",
+          "recommend_reason": "string"
+        }
+      ]
+    }
+    ```
+  - **400 缺少用户ID**：`{"error": "Missing user ID"}`
+  - **404 无推荐结果**：`{"message": "No recommendations found"}`
+  - **500 服务器错误**：`{"error": "Server error"}`
+- **说明**：
+  - 该API根据用户最近浏览、购物车和收藏的书籍记录，分析出用户可能感兴趣的书籍特征（如作者和标签），并推荐相关书籍。
+  - 推荐结果包括书籍ID、推荐类型（作者推荐或标签推荐）以及推荐理由。
+
