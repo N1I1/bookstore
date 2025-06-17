@@ -145,6 +145,9 @@
 
 ---
 
+### 通过 book_id 获取相关帖子
+
+
 ### 更新帖子
 
 - **URL**：`PUT /api/forum_posts/<post_id>`
