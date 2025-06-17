@@ -32,7 +32,8 @@
           <el-button 
             type="success" 
             class="add-to-cart-btn"
-            :disabled="book.stock <= 0"
+            :loading="cartLoading"
+            :disabled="book && (book.stock <= 0 || cartLoading)"
             @click="addToCart"
           >
             <el-icon><i class="el-icon-plus"></i></el-icon>
@@ -82,6 +83,7 @@ const router = useRouter()
 const book = ref(null)
 const defaultImg = 'https://img1.baidu.com/it/u=1609036816,3547813773&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=750'
 const favLoading = ref(false)
+const cartLoading = ref(false)
 
 onMounted(async () => {
   const bookId = route.params.id
@@ -119,30 +121,31 @@ function goToCart() {
 // 加入购物车
 async function addToCart() {
   if (!book.value) return
-  
+  cartLoading.value = true
   try {
-    const response = await axios.post('/api/cart/add', {
+    const res = await axios.post('/api/user_cart/', {
       book_id: book.value.book_id,
       quantity: 1
-    }, {
-      withCredentials: true
-    })
-    
-    if (response.data.success) {
+    }, { withCredentials: true })
+    if (res.status === 201) {
       ElMessage.success('已加入购物车')
     } else {
-      ElMessage.warning(response.data.message || '加入购物车失败')
+      ElMessage.warning(res.data.error || '加入购物车失败')
     }
   } catch (error) {
-    console.error('加入购物车异常:', error)
-    if (error.response && error.response.status === 401) {
+    if (error.response?.status === 400 && error.response.data.error === 'Book already in cart') {
+      ElMessage.warning('该书已在购物车')
+    } else if (error.response?.status === 401) {
       ElMessage.warning('请先登录')
       router.push('/login')
     } else {
-      ElMessage.error('操作失败，请重试')
+      ElMessage.error(error.response?.data?.error || '操作失败')
     }
+  } finally {
+    cartLoading.value = false
   }
 }
+
 // 添加收藏 
 async function addFavorite() {
   if (!book.value) return
