@@ -1,25 +1,49 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
 from app.models.order import Order
+from app.models.orderdetail import OrderDetail
+from app.models.book import Book
+from app.models.admin import Admin
 from app import db
 
-# 创建蓝图
 order_bp = Blueprint('order', __name__, url_prefix='/api/orders')
-
 
 class OrderView(MethodView):
     def get(self, order_id=None):
-        """处理 GET 请求，获取订单信息"""
+        """获取订单或订单列表"""
+        user_id = session.get('user_id')
+        admin_id = session.get('admin_id')
+
         if order_id is None:
-            # 获取所有订单
-            orders = Order.query.all()
-            return jsonify([{
+            # 查询订单列表
+            if user_id:
+                orders = Order.query.filter_by(user_id=user_id).all()
+            elif admin_id:
+                orders = Order.query.filter_by(admin_id=admin_id).all()
+            else:
+                return jsonify({"error": "Unauthorized"}), 401
+            return jsonify([
+                {
+                    "order_id": o.order_id,
+                    "order_status": o.order_status,
+                    "order_time": o.order_time.isoformat(),
+                    "total_amount": float(o.total_amount),
+                } for o in orders
+            ])
+        else:
+            # 查询单个订单
+            order = db.session.get(Order, order_id)
+            if not order:
+                return jsonify({"error": "Order not found"}), 404
+            if user_id and order.user_id != user_id:
+                return jsonify({"error": "Forbidden"}), 403
+            if admin_id and order.admin_id != admin_id:
+                return jsonify({"error": "Forbidden"}), 403
+            return jsonify({
                 "order_id": order.order_id,
-                "user_id": order.user_id,
-                "admin_id": order.admin_id,
                 "order_status": order.order_status,
                 "order_time": order.order_time.isoformat(),
                 "payment_time": order.payment_time.isoformat() if order.payment_time else None,
@@ -30,122 +54,264 @@ class OrderView(MethodView):
                 "current_address": order.current_address,
                 "shipper_phone": order.shipper_phone,
                 "biller_phone": order.biller_phone,
-                "remark": order.remark
-            } for order in orders])
-        else:
-            # 获取单个订单
-            order = Order.query.get(order_id)
-            if order:
-                return jsonify({
-                    "order_id": order.order_id,
-                    "user_id": order.user_id,
-                    "admin_id": order.admin_id,
-                    "order_status": order.order_status,
-                    "order_time": order.order_time.isoformat(),
-                    "payment_time": order.payment_time.isoformat() if order.payment_time else None,
-                    "ship_time": order.ship_time.isoformat() if order.ship_time else None,
-                    "get_time": order.get_time.isoformat() if order.get_time else None,
-                    "ship_address": order.ship_address,
-                    "bill_address": order.bill_address,
-                    "current_address": order.current_address,
-                    "shipper_phone": order.shipper_phone,
-                    "biller_phone": order.biller_phone,
-                    "remark": order.remark
-                })
-            else:
-                return jsonify({"error": "Order not found"}), 404
+                "remark": order.remark,
+                "total_amount": float(order.total_amount),
+                "details": [
+                    {
+                        "detail_id": d.detail_id,
+                        "book_id": d.book_id,
+                        "book_title": d.book.title if d.book else None,
+                        "quantity": d.quantity,
+                        "unit_price": float(d.unit_price)
+                    } for d in order.order_details
+                ]
+            })
 
     def post(self):
-        """处理 POST 请求，创建新订单"""
+        """创建新订单（用户）"""
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
         data = request.json
         try:
-            new_order = Order(
-                user_id=data['user_id'],
-                admin_id=data['admin_id'],
-                order_status=data.get('order_status', '未支付'),
-                ship_address=data['ship_address'],
-                bill_address=data['bill_address'],
-                current_address=data['current_address'],
-                shipper_phone=data['shipper_phone'],
-                biller_phone=data['biller_phone'],
-                remark=data.get('remark')
+            details = data.get('details')
+            if not details or not isinstance(details, list):
+                return jsonify({"error": "Order details required"}), 400
+
+            total_amount = 0
+            order_details = []
+            for item in details:
+                book_id = item.get('book_id')
+                if not book_id:
+                    return jsonify({"error": "book_id is required"}), 400
+                book = db.session.get(Book, book_id)
+                if not book:
+                    return jsonify({"error": f"Book {book_id} not found"}), 400
+                quantity = item.get('quantity')
+                if not isinstance(quantity, int) or quantity <= 0:
+                    return jsonify({"error": "Quantity must be positive"}), 400
+                unit_price = float(book.price) * float(book.discount)
+                total_amount += unit_price * quantity
+                order_details.append({
+                    "book_id": book.book_id,
+                    "quantity": quantity,
+                    "unit_price": unit_price
+                })
+
+            bill_address = data.get('bill_address', '')
+            biller_phone = data.get('biller_phone', '')
+            remark = data.get('remark', '')
+
+            # 创建订单
+            order = Order(
+                user_id=user_id,
+                order_status='未支付',
+                order_time=datetime.now(),
+                bill_address=bill_address,
+                biller_phone=biller_phone,
+                remark=remark,
+                total_amount=total_amount
             )
-            db.session.add(new_order)
+            db.session.add(order)
+            db.session.flush()  # 获取order_id
+
+            # 创建订单明细
+            for d in order_details:
+                detail = OrderDetail(
+                    order_id=order.order_id,
+                    book_id=d['book_id'],
+                    quantity=d['quantity'],
+                    unit_price=d['unit_price']
+                )
+                db.session.add(detail)
             db.session.commit()
-            return jsonify({
-                "order_id": new_order.order_id,
-                "user_id": new_order.user_id,
-                "admin_id": new_order.admin_id,
-                "order_status": new_order.order_status,
-                "order_time": new_order.order_time.isoformat(),
-                "payment_time": new_order.payment_time.isoformat() if new_order.payment_time else None,
-                "ship_time": new_order.ship_time.isoformat() if new_order.ship_time else None,
-                "get_time": new_order.get_time.isoformat() if new_order.get_time else None,
-                "ship_address": new_order.ship_address,
-                "bill_address": new_order.bill_address,
-                "current_address": new_order.current_address,
-                "shipper_phone": new_order.shipper_phone,
-                "biller_phone": new_order.biller_phone,
-                "remark": new_order.remark
-            }), 201
-        except IntegrityError:
-            db.session.rollback()
-            return jsonify({"error": "Invalid user_id or admin_id"}), 400
+            return jsonify({"order_id": order.order_id, "total_amount": float(order.total_amount)}), 201
+
         except KeyError as e:
             return jsonify({"error": f"Missing required field: {e.args[0]}"}), 400
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": "Server error"}), 400
 
     def put(self, order_id):
-        """处理 PUT 请求，更新订单信息"""
-        order = Order.query.get(order_id)
+        """用户修改订单地址、备注等信息"""
+        order = db.session.get(Order, order_id)
         if not order:
             return jsonify({"error": "Order not found"}), 404
 
+        user_id = session.get('user_id')
         data = request.json
-        try:
-            order.order_status = data.get('order_status', order.order_status)
-            order.ship_address = data.get('ship_address', order.ship_address)
-            order.bill_address = data.get('bill_address', order.bill_address)
-            order.current_address = data.get('current_address', order.current_address)
-            order.shipper_phone = data.get('shipper_phone', order.shipper_phone)
-            order.biller_phone = data.get('biller_phone', order.biller_phone)
-            order.remark = data.get('remark', order.remark)
-            order.payment_time = data.get('payment_time', order.payment_time)
-            order.ship_time = data.get('ship_time', order.ship_time)
-            order.get_time = data.get('get_time', order.get_time)
+
+        if user_id:
+            if order.user_id != user_id:
+                return jsonify({"error": "Forbidden"}), 403
+            # 用户只能改地址、备注、电话等信息
+            if order.order_status != '未支付':
+                return jsonify({"error": "Only unpaid orders can be updated"}), 400
+            updated = False
+            for field in ['bill_address', 'biller_phone', 'remark']:
+                if field in data:
+                    setattr(order, field, data[field])
+                    updated = True
+            if not updated:
+                return jsonify({"error": "No updatable field provided"}), 400
             db.session.commit()
-            return jsonify({
-                "order_id": order.order_id,
-                "user_id": order.user_id,
-                "admin_id": order.admin_id,
-                "order_status": order.order_status,
-                "order_time": order.order_time.isoformat(),
-                "payment_time": order.payment_time.isoformat() if order.payment_time else None,
-                "ship_time": order.ship_time.isoformat() if order.ship_time else None,
-                "get_time": order.get_time.isoformat() if order.get_time else None,
-                "ship_address": order.ship_address,
-                "bill_address": order.bill_address,
-                "current_address": order.current_address,
-                "shipper_phone": order.shipper_phone,
-                "biller_phone": order.biller_phone,
-                "remark": order.remark
-            })
-        except IntegrityError:
-            db.session.rollback()
-            return jsonify({"error": "Invalid user_id or admin_id"}), 400
+            return jsonify({"message": "Order updated successfully"})
+        else:
+            return jsonify({"error": "Unauthorized"}), 401
 
     def delete(self, order_id):
-        """处理 DELETE 请求，删除订单"""
-        order = Order.query.get(order_id)
-        if order:
-            db.session.delete(order)
-            db.session.commit()
-            return jsonify({"message": "Order deleted"}), 204
-        else:
+        """删除订单（仅用户可删自己的未支付订单）"""
+        order = db.session.get(Order, order_id)
+        if not order:
             return jsonify({"error": "Order not found"}), 404
+        user_id = session.get('user_id')
+        if not user_id or order.user_id != user_id:
+            return jsonify({"error": "Forbidden"}), 403
+        if order.order_status != '未支付':
+            return jsonify({"error": "Only unpaid orders can be deleted"}), 400
+        # 级联删除明细
+        for detail in order.order_details:
+            db.session.delete(detail)
+        db.session.delete(order)
+        db.session.commit()
+        return '', 204
 
-
-# 将 OrderView 注册到蓝图
+# 注册路由
 order_api = OrderView.as_view('order_api')
 order_bp.add_url_rule('/', view_func=order_api, methods=['GET'], defaults={'order_id': None})
 order_bp.add_url_rule('/', view_func=order_api, methods=['POST'])
 order_bp.add_url_rule('/<int:order_id>', view_func=order_api, methods=['GET', 'PUT', 'DELETE'])
+
+
+@order_bp.route('/<int:order_id>/pay', methods=['POST'])
+def user_pay_order(order_id):
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    order = db.session.get(Order, order_id)
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
+    if order.user_id != user_id:
+        return jsonify({"error": "Forbidden"}), 403
+    if order.order_status != '未支付':
+        return jsonify({"error": "Order status not allowed for payment"}), 400
+
+    order.order_status = '已支付'
+    order.payment_time = datetime.now()
+    db.session.commit()
+    return jsonify({"message": "Order paid successfully"})
+
+@order_bp.route('/<int:order_id>/cancel', methods=['POST'])
+def user_cancel_order(order_id):
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    order = db.session.get(Order, order_id)
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
+    if order.user_id != user_id:
+        return jsonify({"error": "Forbidden"}), 403
+    if order.order_status not in ['未支付', '已支付']:
+        return jsonify({"error": "Only unpaid or paid-but-unshipped orders can be cancelled"}), 400
+
+    order.order_status = '订单取消'
+    db.session.commit()
+    return jsonify({"message": "Order cancelled successfully"})
+
+@order_bp.route('/<int:order_id>/confirm', methods=['POST'])
+def user_confirm_order(order_id):
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    order = db.session.get(Order, order_id)
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
+    if order.user_id != user_id:
+        return jsonify({"error": "Forbidden"}), 403
+    if order.order_status != '已发货':
+        return jsonify({"error": "Order status not allowed for confirmation"}), 400
+
+    order.get_time = datetime.now()
+    order.order_status = '已完成'
+    db.session.commit()
+    return jsonify({"message": "Order confirmed successfully"})
+
+@order_bp.route('/<int:order_id>/ship', methods=['POST'])
+def admin_ship_order(order_id):
+    admin_id = session.get('admin_id')
+    if not admin_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    order = db.session.get(Order, order_id)
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
+    if order.admin_id != admin_id:
+        return jsonify({"error": "Forbidden"}), 403
+    if order.order_status != '已支付':
+        return jsonify({"error": "Order status not allowed for shipping"}), 400
+
+    data = request.json or {}
+    if 'ship_address' in data:
+        order.ship_address = data['ship_address']
+    if 'current_address' in data:
+        order.current_address = data['current_address']
+    if 'shipper_phone' in data:
+        order.shipper_phone = data['shipper_phone']
+
+    order.ship_time = datetime.now()
+    order.order_status = '已发货'
+    db.session.commit()
+    return jsonify({"message": "Order shipped successfully"})
+
+@order_bp.route('/<int:order_id>/ship_address', methods=['PUT'])
+def admin_update_ship_address(order_id):
+    admin_id = session.get('admin_id')
+    if not admin_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    order = db.session.get(Order, order_id)
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
+    if order.admin_id != admin_id:
+        return jsonify({"error": "Forbidden"}), 403
+
+    data = request.json or {}
+    # 只允许管理员修改运输相关地址
+    updated = False
+    for field in ['ship_address', 'current_address']:
+        if field in data:
+            setattr(order, field, data[field])
+            updated = True
+
+    if not updated:
+        return jsonify({"error": "No address field provided"}), 400
+
+    db.session.commit()
+    return jsonify({"message": "Shipping address updated successfully"})
+
+def assign_admin_to_orders():
+    # 查询所有未分配管理员的订单
+    unassigned_orders = Order.query.filter_by(admin_id=None, order_status='已支付').all()
+    if not unassigned_orders:
+        print("没有需要分配的订单")
+        return
+
+    # 查询所有管理员及其当前订单数
+    admins = Admin.query.all()
+    if not admins:
+        print("没有可用的管理员")
+        return
+
+    # 统计每个管理员当前已分配的订单数
+    admin_order_counts = {
+        admin.admin_id: Order.query.filter_by(admin_id=admin.admin_id).count()
+        for admin in admins
+    }
+
+    for order in unassigned_orders:
+        # 找到订单数最少的管理员
+        min_admin_id = min(admin_order_counts, key=admin_order_counts.get)
+        order.admin_id = min_admin_id
+        admin_order_counts[min_admin_id] += 1  # 该管理员订单数+1
+
+    db.session.commit()
+    print(f"已为{len(unassigned_orders)}个订单分配管理员")

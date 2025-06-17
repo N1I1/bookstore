@@ -141,3 +141,20 @@ def get_random_posts():
 forum_post_api = ForumPostView.as_view('forum_post_api')
 forum_post_bp.add_url_rule('/', view_func=forum_post_api, methods=['POST'])
 forum_post_bp.add_url_rule('/<int:post_id>', view_func=forum_post_api, methods=['GET', 'PUT', 'DELETE'])
+
+
+@forum_post_bp.route('/by_book/<int:book_id>', methods=['GET'])
+def get_posts_by_book(book_id):
+    posts = ForumPost.query.filter_by(book_id=book_id, is_deleted=False).all()
+    if not posts:
+        return jsonify({"error": "No posts found for this book"}), 404
+    return jsonify([{
+        'post_id': post.post_id,
+        'title': post.title,
+        'content': post.content,
+        'post_time': post.post_time.isoformat(),
+        'browse_count': post.browse_count,
+        'user_id': post.user_id
+    } for post in posts])
+
+    
