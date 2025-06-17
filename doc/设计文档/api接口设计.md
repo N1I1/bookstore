@@ -147,6 +147,25 @@
 
 ### 通过 book_id 获取相关帖子
 
+### 通过 user_id 获取用户所有帖子
+
+- **URL**：`GET /api/forum_posts/by_user/<user_id>`
+- **说明**：获取指定用户发布的所有帖子
+- **响应**：
+  - 200 成功，返回该用户的帖子列表
+    ```json
+    [
+      {
+        "post_id": 1,
+        "book_id": 1,
+        "title": "string",
+        "content": "string",
+        "post_time": "2025-06-15T12:34:56",
+        "browse_count": 10
+      }
+    ]
+    ```
+  - 404 未找到帖子：`{"error": "No posts found for this user"}`
 
 ### 更新帖子
 
@@ -315,6 +334,7 @@
       "browse_id": 1,
       "user_id": 1,
       "book_id": 1,
+      "book_title": "book_title",
       "browse_time": "2025-06-15T12:34:56"
     }
     ```
@@ -346,6 +366,7 @@
         "browse_id": 1,
         "user_id": 1,
         "book_id": 1,
+        "book_title": "book_title",
         "browse_time": "2025-06-15T12:34:56"
       }
     ]
@@ -428,6 +449,7 @@ jsonify({"error": "Internal server error"}), 500
     [
       {
         "book_id": 1,
+        "book_title": "book_title",
         "favorite_time": "2025-06-16T12:34:56"
       }
     ]
@@ -450,6 +472,7 @@ jsonify({"error": "Internal server error"}), 500
     ```json
     {
       "book_id": 1,
+      "book_title": "book_title",
       "favorite_time": "2025-06-16T12:34:56"
     }
     ```
