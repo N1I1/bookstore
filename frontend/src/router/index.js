@@ -7,6 +7,7 @@ import UserInfo from '../views/UserInfo.vue'
 import Cart from '../views/Cart.vue'
 import Browse from '../views/Browse.vue'
 import Favorite from '../views/Favorite.vue'
+import CreatePost from '../views/CreatePost.vue'
 
 const routes = [
   { path: '/userlogin', component: UserLogin },
@@ -17,6 +18,7 @@ const routes = [
   { path: '/cart', component: Cart },
   { path: '/favorite', component: Favorite },
   { path: '/browse', component: Browse },
+  { path: '/createpost', name: 'CreatePost', component: CreatePost }
 ]
 
 const router = createRouter({
