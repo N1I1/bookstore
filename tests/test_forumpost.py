@@ -239,3 +239,10 @@ def test_get_posts_by_book(client, login_user, test_book, test_user):
     db.session.delete(post1)
     db.session.delete(post2)
     db.session.commit()
+
+def test_get_random_posts_no_posts(client):
+    # 先确保没有帖子
+    ForumPost.query.delete()
+    db.session.commit()
+    response = client.get('/api/forum_posts/by_book/999999')
+    assert response.status_code == 404
