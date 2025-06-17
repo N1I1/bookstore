@@ -1,133 +1,90 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify
 from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
 
-from app.models.booktag import book_tag
+from app.models.booktag import BookTag
 from app import db
 
 booktag_bp = Blueprint('booktag', __name__, url_prefix='/api/booktags')
 
 
 class BookTagView(MethodView):
-    def post(self):
-        """处理 POST 请求，创建新的图书标签关联"""
-        admin_id = session.get('admin_id', None)
-        if not admin_id:
-            return jsonify({"error": "Unauthorized"}), 401
-        book_id = request.json.get('book_id')
-        tag_id = request.json.get('tag_id')
-        if not book_id or not tag_id:
-            return jsonify({"error": "Missing required fields: book_id and tag_id"}), 400
-        try:
-            # 检查是否已存在该关联
-            exists = db.session.execute(
-                db.select(book_tag).where(
-                    book_tag.c.book_id == book_id,
-                    book_tag.c.tag_id == tag_id
-                )
-            ).first()
-            if exists:
-                return jsonify({"error": "Duplicate book tag"}), 400
+    def get(self, book_tag_id=None):
+        """处理 GET 请求，获取图书标签信息"""
+        if book_tag_id is None:
+            # 获取所有图书标签
+            book_tags = BookTag.query.all()
+            print(f"Retrieved {len(book_tags)} book tags from the database.")
+            return jsonify([{
+                "book_tag_id": tag.book_tag_id,
+                "book_id": tag.book_id,
+                "tag": tag.tag
+            } for tag in book_tags])
+        else:
+            # 获取单个图书标签
+            book_tag = BookTag.query.get(book_tag_id)
+            if book_tag:
+                return jsonify({
+                    "book_tag_id": book_tag.book_tag_id,
+                    "book_id": book_tag.book_id,
+                    "tag": book_tag.tag
+                })
+            else:
+                return jsonify({"error": "Book tag not found"}), 404
 
-            # 插入新关联
-            db.session.execute(
-                book_tag.insert().values(book_id=book_id, tag_id=tag_id)
+    def post(self):
+        """处理 POST 请求，创建新的图书标签"""
+        data = request.json
+        try:
+            new_book_tag = BookTag(
+                book_id=data['book_id'],
+                tag=data['tag']
             )
+            db.session.add(new_book_tag)
             db.session.commit()
             return jsonify({
-                "book_id": book_id,
-                "tag_id": tag_id
+                "book_tag_id": new_book_tag.book_tag_id,
+                "book_id": new_book_tag.book_id,
+                "tag": new_book_tag.tag
             }), 201
-        except Exception:
+        except IntegrityError:
             db.session.rollback()
-            return jsonify({"error": "Server error"}), 500
+            return jsonify({"error": "Duplicate book tag"}), 400
+        except KeyError as e:
+            return jsonify({"error": f"Missing required field: {e.args[0]}"}), 400
 
-    def put(self):
+    def put(self, book_tag_id):
         """处理 PUT 请求，更新图书标签信息"""
-        admin_id = session.get('admin_id', None)
-        if not admin_id:
-            return jsonify({"error": "Unauthorized"}), 401
+        book_tag = BookTag.query.get(book_tag_id)
+        if not book_tag:
+            return jsonify({"error": "Book tag not found"}), 404
+
         data = request.json
-        book_id = data.get('book_id')
-        tag_id = data.get('tag_id')
-        new_tag_id = data.get('new_tag_id')
-        if not book_id or not tag_id or not new_tag_id:
-            return jsonify({"error": "Missing required fields: book_id, tag_id, new_tag_id"}), 400
-
-        # 检查原关联是否存在
-        exists = db.session.execute(
-            db.select(book_tag).where(
-                book_tag.c.book_id == book_id,
-                book_tag.c.tag_id == tag_id
-            )
-        ).first()
-        if not exists:
-            return jsonify({"error": "Book tag relation not found"}), 404
-
-        # 检查新关联是否已存在
-        duplicate = db.session.execute(
-            db.select(book_tag).where(
-                book_tag.c.book_id == book_id,
-                book_tag.c.tag_id == new_tag_id
-            )
-        ).first()
-        if duplicate:
+        try:
+            book_tag.book_id = data.get('book_id', book_tag.book_id)
+            book_tag.tag = data.get('tag', book_tag.tag)
+            db.session.commit()
+            return jsonify({
+                "book_tag_id": book_tag.book_tag_id,
+                "book_id": book_tag.book_id,
+                "tag": book_tag.tag
+            })
+        except IntegrityError:
+            db.session.rollback()
             return jsonify({"error": "Duplicate book tag"}), 400
 
-        try:
-            # 先删除原关联
-            db.session.execute(
-                book_tag.delete().where(
-                    book_tag.c.book_id == book_id,
-                    book_tag.c.tag_id == tag_id
-                )
-            )
-            # 再插入新关联
-            db.session.execute(
-                book_tag.insert().values(book_id=book_id, tag_id=new_tag_id)
-            )
-            db.session.commit()
-            return jsonify({
-                "book_id": book_id,
-                "tag_id": new_tag_id
-            }), 200
-        except Exception:
-            db.session.rollback()
-            return jsonify({"error": "Server error"}), 500
-
-    def delete(self):
+    def delete(self, book_tag_id):
         """处理 DELETE 请求，删除图书标签"""
-        admin_id = session.get('admin_id', None)
-        if not admin_id:
-            return jsonify({"error": "Unauthorized"}), 401
-        data = request.json
-        book_id = data.get('book_id')
-        tag_id = data.get('tag_id')
-        if not book_id or not tag_id:
-            return jsonify({"error": "Missing required fields: book_id and tag_id"}), 400
-
-        exists = db.session.execute(
-            db.select(book_tag).where(
-                book_tag.c.book_id == book_id,
-                book_tag.c.tag_id == tag_id
-            )
-        ).first()
-        if not exists:
-            return jsonify({"error": "Book tag relation not found"}), 404
-
-        try:
-            db.session.execute(
-                book_tag.delete().where(
-                    book_tag.c.book_id == book_id,
-                    book_tag.c.tag_id == tag_id
-                )
-            )
+        book_tag = BookTag.query.get(book_tag_id)
+        if book_tag:
+            db.session.delete(book_tag)
             db.session.commit()
-            return '', 204
-        except Exception:
-            db.session.rollback()
-            return jsonify({"error": "Server error"}), 500
+            return jsonify({"message": "Book tag deleted"}), 204
+        else:
+            return jsonify({"error": "Book tag not found"}), 404
 
 # 将 BookTagView 注册到蓝图
 booktag_api = BookTagView.as_view('booktag_api')
-booktag_bp.add_url_rule('/', view_func=booktag_api, methods=['POST', 'PUT', 'DELETE'])
+booktag_bp.add_url_rule('/', view_func=booktag_api, methods=['GET', ], defaults={'book_tag_id': None})
+booktag_bp.add_url_rule('/', view_func=booktag_api, methods=['POST', ])
+booktag_bp.add_url_rule('/<int:book_tag_id>', view_func=booktag_api, methods=['GET', 'PUT', 'DELETE'])
