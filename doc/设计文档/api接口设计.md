@@ -813,3 +813,234 @@ jsonify({"error": "Internal server error"}), 500
   - 该API根据用户最近浏览、购物车和收藏的书籍记录，分析出用户可能感兴趣的书籍特征（如作者和标签），并推荐相关书籍。
   - 推荐结果包括书籍ID、推荐类型（作者推荐或标签推荐）以及推荐理由。
 
+---
+
+## 订单（Order）
+
+### 获取订单列表
+
+- **URL**：`GET /api/orders/`
+- **说明**：用户获取自己的订单列表，管理员获取自己分配的订单列表
+- **权限**：需登录
+- **响应**：
+  - 200 成功，返回订单列表
+    ```json
+    [
+      {
+        "order_id": 1,
+        "order_status": "未支付",
+        "order_time": "2025-06-16T12:34:56",
+        "total_amount": 99.9
+      }
+    ]
+    ```
+  - 401 未授权：`{"error": "Unauthorized"}`
+
+---
+
+### 获取单个订单
+
+- **URL**：`GET /api/orders/<order_id>`
+- **说明**：用户或管理员获取自己相关的订单详情
+- **权限**：需登录
+- **响应**：
+  - 200 成功
+    ```json
+    {
+      "order_id": 1,
+      "order_status": "已支付",
+      "order_time": "2025-06-16T12:34:56",
+      "payment_time": "2025-06-16T13:00:00",
+      "ship_time": "2025-06-17T09:00:00",
+      "get_time": "2025-06-18T10:00:00",
+      "ship_address": "收货地址",
+      "bill_address": "账单地址",
+      "current_address": "当前运输地址",
+      "shipper_phone": "12345678901",
+      "biller_phone": "12345678901",
+      "remark": "备注信息",
+      "total_amount": 99.9,
+      "details": [
+        {
+          "detail_id": 1,
+          "book_id": 1,
+          "book_title": "三体",
+          "quantity": 2,
+          "unit_price": 49.95
+        }
+      ]
+    }
+    ```
+  - 401 未授权：`{"error": "Unauthorized"}`
+  - 403 非本人/非分配管理员：`{"error": "Forbidden"}`
+  - 404 订单不存在：`{"error": "Order not found"}`
+
+---
+
+### 创建订单
+
+- **URL**：`POST /api/orders/`
+- **权限**：仅用户
+- **请求体**（JSON）：
+  ```json
+  {
+    "details": [
+      {
+        "book_id": 1,
+        "quantity": 2
+      }
+    ],
+    "bill_address": "账单地址",
+    "biller_phone": "12345678901",
+    "remark": "备注"
+  }
+  ```
+- **响应**：
+  - 201 成功：`{"order_id": 1, "total_amount": 99.9}`
+  - 400 缺少字段/参数错误/书籍不存在
+  - 401 未授权
+
+---
+
+### 修改订单（仅未支付，用户可改账单地址、电话、备注）
+
+- **URL**：`PUT /api/orders/<order_id>`
+- **权限**：仅用户
+- **请求体**（JSON，可选字段）：
+  ```json
+  {
+    "bill_address": "新账单地址",
+    "biller_phone": "新电话",
+    "remark": "新备注"
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "Order updated successfully"}`
+  - 400 订单状态不允许/无可更新字段
+  - 401 未授权
+  - 403 非本人
+  - 404 订单不存在
+
+---
+
+### 删除订单（仅未支付，用户可删）
+
+- **URL**：`DELETE /api/orders/<order_id>`
+- **权限**：仅用户
+- **响应**：
+  - 204 成功，无内容
+  - 400 订单状态不允许
+  - 401 未授权
+  - 403 非本人
+  - 404 订单不存在
+
+---
+
+### 用户支付订单
+
+- **URL**：`POST /api/orders/<order_id>/pay`
+- **权限**：仅用户
+- **响应**：
+  - 200 成功：`{"message": "Order paid successfully"}`
+  - 400 订单状态不允许
+  - 401 未授权
+  - 403 非本人
+  - 404 订单不存在
+
+---
+
+### 用户取消订单
+
+- **URL**：`POST /api/orders/<order_id>/cancel`
+- **权限**：仅用户
+- **响应**：
+  - 200 成功：`{"message": "Order cancelled successfully"}`
+  - 400 订单状态不允许
+  - 401 未授权
+  - 403 非本人
+  - 404 订单不存在
+
+---
+
+### 用户确认收货
+
+- **URL**：`POST /api/orders/<order_id>/confirm`
+- **权限**：仅用户
+- **响应**：
+  - 200 成功：`{"message": "Order confirmed successfully"}`
+  - 400 订单状态不允许
+  - 401 未授权
+  - 403 非本人
+  - 404 订单不存在
+
+---
+
+### 管理员发货
+
+- **URL**：`POST /api/orders/<order_id>/ship`
+- **权限**：仅管理员
+- **请求体**（JSON，可选字段）：
+  ```json
+  {
+    "ship_address": "收货地址",
+    "current_address": "当前运输地址",
+    "shipper_phone": "快递员电话"
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "Order shipped successfully"}`
+  - 400 订单状态不允许
+  - 401 未授权
+  - 403 非分配管理员
+  - 404 订单不存在
+
+---
+
+### 管理员修改运输地址
+
+- **URL**：`PUT /api/orders/<order_id>/ship_address`
+- **权限**：仅管理员
+- **请求体**（JSON，至少一个字段）：
+  ```json
+  {
+    "ship_address": "新收货地址",
+    "current_address": "新运输地址"
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "Shipping address updated successfully"}`
+  - 400 缺少字段
+  - 401 未授权
+  - 403 非分配管理员
+  - 404 订单不存在
+
+---
+
+## 订单明细（OrderDetail）
+
+### 获取订单明细
+
+- **URL**：`GET /api/order_details/<detail_id>`
+- **说明**：仅允许用户/管理员获取自己相关订单的明细
+- **权限**：需登录
+- **响应**：
+  - 200 成功
+    ```json
+    {
+      "detail_id": 1,
+      "order_id": 1,
+      "book_id": 1,
+      "quantity": 2,
+      "unit_price": 49.95,
+      "book_title": "三体"
+    }
+    ```
+  - 401 未授权
+  - 403 非本人/非分配管理员
+  - 404 明细不存在
+
+---
+
+> 订单相关接口均需登录，用户只能操作自己的订单，管理员只能操作分配给自己的订单。
+> 分配订单给管理员的功能还需要完善。
+
