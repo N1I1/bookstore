@@ -219,3 +219,30 @@ def test_get_random_posts_no_posts(client):
     db.session.commit()
     response = client.get('/api/forum_posts/get_posts')
     assert response.status_code == 404
+
+def test_get_posts_by_book(client, login_user, test_book, test_user):
+    # 创建两个帖子，均关联到 test_book
+    post1 = ForumPost(user_id=test_user.user_id, book_id=test_book.book_id, title='Book Post 1', content='Content 1')
+    post2 = ForumPost(user_id=test_user.user_id, book_id=test_book.book_id, title='Book Post 2', content='Content 2')
+    db.session.add_all([post1, post2])
+    db.session.commit()
+
+    response = client.get(f'/api/forum_posts/by_book/{test_book.book_id}')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+    titles = [post['title'] for post in data]
+    assert 'Book Post 1' in titles
+    assert 'Book Post 2' in titles
+
+    # 清理
+    db.session.delete(post1)
+    db.session.delete(post2)
+    db.session.commit()
+
+def test_get_random_posts_no_posts(client):
+    # 先确保没有帖子
+    ForumPost.query.delete()
+    db.session.commit()
+    response = client.get('/api/forum_posts/by_book/999999')
+    assert response.status_code == 404
