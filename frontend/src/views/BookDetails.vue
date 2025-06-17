@@ -45,6 +45,15 @@
             <el-tag v-if="book.stock <= 0" type="danger" size="small" style="margin-left:8px;">售罄</el-tag>
           </div>
           <div class="book-desc">简介：{{ book.description || '暂无简介' }}</div>
+          <el-button
+            type="primary"
+            class="favorite-btn"
+            :loading="favLoading"
+            @click="addFavorite"
+          >
+            <el-icon><i class="el-icon-star-on"></i></el-icon>
+            收藏
+          </el-button>
         </div>
       </div>
     </el-card>
@@ -63,6 +72,7 @@ const route = useRoute()
 const router = useRouter()
 const book = ref(null)
 const defaultImg = 'https://img1.baidu.com/it/u=1609036816,3547813773&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=750'
+const favLoading = ref(false)
 
 onMounted(async () => {
   const bookId = route.params.id
@@ -122,6 +132,35 @@ async function addToCart() {
     } else {
       ElMessage.error('操作失败，请重试')
     }
+  }
+}
+// 添加收藏 
+async function addFavorite() {
+  if (!book.value) return
+  favLoading.value = true
+  try {
+    const res = await axios.post('/api/user_favorites/', { book_id: book.value.book_id }, { withCredentials: true })
+    if (res.status === 201) {
+      ElMessage.success('收藏成功')
+    }
+  } catch (err) {
+    if (err.response) {
+      if (err.response.status === 400 && err.response.data.error === 'Book already favorited') {
+        ElMessage.warning('该书已收藏')
+      } else if (err.response.status === 400) {
+        ElMessage.error('缺少必要字段')
+      } else if (err.response.status === 404) {
+        ElMessage.error('图书不存在')
+      } else if (err.response.status === 401) {
+        ElMessage.warning('请先登录')
+      } else {
+        ElMessage.error('收藏失败')
+      }
+    } else {
+      ElMessage.error('网络错误')
+    }
+  } finally {
+    favLoading.value = false
   }
 }
 </script>
@@ -260,5 +299,11 @@ async function addToCart() {
   background: #f9f9f9;
   padding: 15px;
   border-radius: 8px;
+}
+/* 收藏键 */
+.favorite-btn {
+  margin-top: 18px;
+  width: 120px;
+  align-self: flex-start;
 }
 </style>
