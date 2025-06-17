@@ -52,19 +52,40 @@
     
     <div class="main-content">
       <!-- 左侧标签栏 -->
-      <el-menu
-        class="tag-menu"
-        :default-active="activeTag"
-        @select="handleTagSelect"
-      >
-        <el-menu-item index="全部">全部</el-menu-item>
-        <el-menu-item
-          v-for="tag in tags"
-          :key="tag"
-          :index="tag"
-        >{{ tag }}</el-menu-item>
-      </el-menu>
-      
+      <div class="tag-menu-fixed">
+        <div
+          v-for="initial in initials"
+          :key="initial"
+          class="tag-initial"
+          :class="{ 'active-initial': activeInitial === initial }"
+          @click="toggleTagGroup(initial)"
+        >
+          {{ initial }}
+          <transition name="fade">
+            <div
+              v-if="activeInitial === initial"
+              class="tag-popover"
+            >
+              <div
+                v-for="tag in tagGroups[initial]"
+                :key="tag.tag_id"
+                class="tag-item"
+                :class="{ 'active-tag': activeTagId === tag.tag_id }"
+                @click.stop="handleTagSelect(tag.tag_id, tag.name)"
+              >
+                {{ tag.name }}
+              </div>
+            </div>
+          </transition>
+        </div>
+        <div 
+          class="tag-initial all-tags" 
+          :class="{ 'active-initial': activeTagId === 'all' }"
+          @click="handleTagSelect('all', '')"
+        >
+          全部
+        </div>
+      </div>
       <!-- 中间书籍部分（确保5行4列布局不变） -->
       <div class="home-wrapper">
         <h2 class="home-title">
@@ -136,8 +157,18 @@ import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const username = ref('用户')
-const tags = ref(['科幻小说', '文学', '历史', '经济', '青春', '推理'])
-const activeTag = ref('全部')
+const tags = ref([])
+// 分组后的标签对象，如 { K: [{tag_id:1, name:'科幻'}], W: [...] }
+const tagGroups = computed(() => {
+  const groups = {}
+  tags.value.forEach(tag => {
+    const first = tag.name[0].toUpperCase()
+    if (!groups[first]) groups[first] = []
+    groups[first].push(tag)
+  })
+  return groups
+})
+const initials = computed(() => Object.keys(tagGroups.value).sort())
 
 // 搜索相关状态
 const searchQuery = ref('')
@@ -160,22 +191,36 @@ const pagedBooks = computed(() => {
   return filteredBooks.value.slice(start, start + pageSize)
 })
 
-// 初始化加载书籍
+// 添加标签相关状态变量
+const activeInitial = ref('') // 当前激活的首字母
+const activeTagId = ref('all') // 当前选中的标签ID
+
 onMounted(async () => {
+  // 1. 获取所有标签
+  try {
+    const tagRes = await axios.get('/api/tags/')
+    tags.value = tagRes.data
+  } catch (err) {
+    tags.value = []
+    ElMessage.error('获取标签失败')
+  }
+  
+  // 2. 获取书籍数据
   try {
     const res = await axios.get('/api/books/')
     books.value = res.data
-    filteredBooks.value = [...books.value] // 初始时显示全部书籍
+    filteredBooks.value = res.data
+    // 重置当前页
+    currentPage.value = 1
   } catch (err) {
-    console.error('获取书籍列表失败:', err)
     books.value = []
     filteredBooks.value = []
     ElMessage.error('获取书籍列表失败')
   }
   
-  // 加载论坛热门帖子
+  // 3. 加载论坛热门帖子
   try {
-    const res = await axios.get('/api/forum_posts/get_posts?limit=5', { params: { limit: 5 } })
+    const res = await axios.get('/api/forum_posts/get_posts', { params: { limit: 5 } })
     posts.value = res.data
   } catch (err) {
     console.error('获取论坛帖子失败:', err)
@@ -258,22 +303,40 @@ const resetSearch = () => {
   searchStatus.value = null
   isSearching.value = false
   filteredBooks.value = [...books.value] // 恢复显示全部书籍
+  activeTagId.value = 'all'
   currentPage.value = 1
 }
 
-// 根据标签过滤书籍
-const handleTagSelect = (tag) => {
-  activeTag.value = tag
-  currentPage.value = 1
+// 点击标签进行筛选
+async function handleTagSelect(tagId, tagName) {
+  activeTagId.value = tagId
+  activeInitial.value = '' // 选择标签后关闭弹出层
   
-  if (tag === '全部') {
-    filteredBooks.value = [...books.value]
-  } else {
-    // 简单的标签过滤（实际中可能更复杂）
-    filteredBooks.value = books.value.filter(book => 
-      (book.tags && book.tags.includes(tag)) || 
-      (book.category && book.category === tag)
-    )
+  // 如果是全部标签
+  if (tagId === 'all') {
+    filteredBooks.value = books.value
+    return
+  }
+  
+  // 添加加载状态
+  loading.value = true
+  try {
+    const res = await axios.get(`/api/tags/${tagId}/books`)
+    filteredBooks.value = res.data
+    
+    // 更新页面标题显示当前标签
+    if (tagName) {
+      isSearching.value = true
+      searchStatus.value = {
+        type: 'info',
+        message: `标签: "${tagName}"`
+      }
+    }
+  } catch (err) {
+    ElMessage.error('获取标签书籍失败')
+    filteredBooks.value = []
+  } finally {
+    loading.value = false
   }
 }
 
@@ -289,6 +352,16 @@ async function goBookDetail(bookId) {
   }
   // 跳转到详情页
   router.push(`/book/${bookId}`)
+}
+
+// 切换标签组显示
+function toggleTagGroup(initial) {
+  // 如果点击的是当前已展开的首字母，则关闭
+  if (activeInitial.value === initial) {
+    activeInitial.value = ''
+  } else {
+    activeInitial.value = initial
+  }
 }
 // 导航方法保持不变
 
@@ -326,6 +399,11 @@ const loading = ref(true)
 </script>
 
 <style scoped>
+.home-wrapper {
+  flex: 1; /* 占据剩余空间 */
+  max-width: 1000px;
+  min-width: 800px;
+}
 .home-container {
   min-height: 100vh;
   background: #f5f5f5;
@@ -384,17 +462,49 @@ const loading = ref(true)
 }
 .main-content {
   display: flex;
-  margin-top: 20px;
+  justify-content: center; /* 居中显示 */
+  padding: 0 20px;
 }
-.tag-menu {
-  width: 160px;
-  min-height: 400px;
-  margin-right: 30px;
+/* tag */
+.tag-menu-fixed {
+  width: 60px;
+  margin-right: 20px; /* 增加右边距 */
+  align-self: flex-start; /* 顶部对齐 */
+}
+.tag-initial {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+  margin: 4px 0;
+  background: #f5f7fa;
+  border-radius: 50%;
+  cursor: pointer;
+  font-weight: bold;
+  position: relative;
+}
+.tag-popover {
+  position: absolute;
+  left: 50px;
+  top: 0;
+  min-width: 100px;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  padding-top: 20px;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 10;
+  padding: 8px 0;
 }
+.tag-item {
+  padding: 6px 18px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tag-item:hover {
+  background: #f0f7ff;
+  color: #409eff;
+}
+/* tag */
 .search-bar {
   margin: 0 auto 20px;
   max-width: 500px;
@@ -527,6 +637,7 @@ const loading = ref(true)
   height: fit-content;
   position: sticky;
   top: 90px;
+  align-self: flex-start; /* 顶部对齐 */
 }
 
 .forum-title {

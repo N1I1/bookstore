@@ -2,7 +2,18 @@
 <template>
   <div class="favorite-wrapper">
     <el-card class="favorite-card">
-      <h2 class="favorite-title">我的收藏夹</h2>
+      <div class="header-container">
+        <el-button 
+          type="primary" 
+          plain 
+          icon="el-icon-s-home" 
+          @click="goHome"
+          class="home-button"
+        >
+          返回主页
+        </el-button>
+        <h2 class="favorite-title">我的收藏夹</h2>
+      </div>
       <el-empty v-if="favorites.length === 0 && !loading" description="暂无收藏" />
       <el-table
         v-else
@@ -17,7 +28,17 @@
             {{ formatTime(scope.row.favorite_time) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120">
+        <el-table-column label="操作" width="200">
+          <template #default="scope">
+            <el-button
+              type="primary"
+              size="small"
+              @click="goBookDetail(scope.row.book_id)"
+              plain
+            >查看</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column label="取消收藏" width="215">
           <template #default="scope">
             <el-button
               type="danger"
@@ -25,12 +46,6 @@
               @click="removeFavorite(scope.row.book_id)"
               :loading="removingId === scope.row.book_id"
             >取消收藏</el-button>
-            <el-button
-              type="primary"
-              size="small"
-              @click="goBookDetail(scope.row.book_id)"
-              plain
-            >查看</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -88,7 +103,9 @@ async function removeFavorite(bookId) {
     removingId.value = null
   }
 }
-
+function goHome() {
+  router.push('/home')
+}
 function goBookDetail(bookId) {
   router.push(`/book/${bookId}`)
 }
@@ -108,11 +125,50 @@ function formatTime(timeStr) {
 .favorite-card {
   padding: 32px;
 }
+
+/* 添加顶部容器样式 */
+.header-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  position: relative; /* 相对定位 */
+}
+
+.home-button {
+  position: absolute; /* 绝对定位在标题左侧 */
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .favorite-title {
   font-size: 24px;
   font-weight: bold;
   color: #409eff;
-  margin-bottom: 24px;
   text-align: center;
+  flex: 1; /* 占据剩余空间以居中标题 */
+}
+
+/* 添加一些响应式设计 */
+@media (max-width: 600px) {
+  .favorite-card {
+    padding: 16px;
+  }
+  
+  .home-button {
+    position: static;
+    transform: none;
+    margin-bottom: 10px;
+  }
+  
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .favorite-title {
+    align-self: center;
+    margin-top: 10px;
+  }
 }
 </style>
