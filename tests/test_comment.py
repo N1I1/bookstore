@@ -5,12 +5,26 @@ from app.models.forumpost import ForumPost
 from app.models.user import User
 
 @pytest.fixture
-def forum_post(app):
+def user(app):
+    """创建一个测试用户"""
+    user = User(username="testuser", 
+                password="testpass",
+                email="example@example.com",
+                phone="1234567890")
+    db.session.add(user)
+    db.session.commit()
+    yield user
+    db.session.delete(user)
+    db.session.commit()
+
+@pytest.fixture
+def forum_post(app, user):
     """创建一个测试帖子"""
-    post = ForumPost(user_id=1, content="test post")
+    post = ForumPost(user_id=user.user_id, content="test post")
     db.session.add(post)
     db.session.commit()
     yield post
+    # 清理相关评论
     comments = Comment.query.filter_by(post_id=post.post_id).all()
     for comment in comments:
         db.session.delete(comment)
@@ -18,15 +32,15 @@ def forum_post(app):
     db.session.commit()
 
 @pytest.fixture
-def login_user(client, app):
+def login_user(client, user):
     """模拟登录，设置 session"""
     with client.session_transaction() as sess:
-        sess['user_id'] = 1  # 假设测试用户ID为1
+        sess['user_id'] = user.user_id
 
 @pytest.fixture
-def sample_comment(app, forum_post):
+def sample_comment(app, forum_post, user):
     """创建一个测试评论"""
-    comment = Comment(post_id=forum_post.post_id, user_id=1, content="test comment")
+    comment = Comment(post_id=forum_post.post_id, user_id=user.user_id, content="test comment")
     db.session.add(comment)
     db.session.commit()
     yield comment
@@ -62,7 +76,7 @@ def test_get_single_comment(client, login_user, sample_comment):
     assert response.status_code == 200
     data = response.get_json()
     assert data["comment_id"] == sample_comment.comment_id
-    assert data["username"] == "testuser"  # 假设你的测试用户叫 testuser
+    assert data["username"] == "testuser"
     assert data["content"] == "test comment"
 
 def test_update_comment(client, login_user, sample_comment):
@@ -107,14 +121,14 @@ def test_delete_nonexistent_comment(client, login_user):
     assert response.status_code == 404
     assert b"Comment not found" in response.data
 
-def test_get_comment_tree(client, login_user, forum_post):
+def test_get_comment_tree(client, login_user, forum_post, user):
     """测试获取评论树结构"""
     # 创建父评论
-    parent = Comment(post_id=forum_post.post_id, user_id=1, content="parent comment")
+    parent = Comment(post_id=forum_post.post_id, user_id=user.user_id, content="parent comment")
     db.session.add(parent)
     db.session.commit()
     # 创建子评论
-    child = Comment(post_id=forum_post.post_id, user_id=1, content="child comment", parent_comment_id=parent.comment_id)
+    child = Comment(post_id=forum_post.post_id, user_id=user.user_id, content="child comment", parent_comment_id=parent.comment_id)
     db.session.add(child)
     db.session.commit()
 
