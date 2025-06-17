@@ -9,3 +9,5 @@ class UserCart(db.Model):
     book_id = db.Column(db.Integer, db.ForeignKey('book.book_id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     add_time = db.Column(db.DateTime, nullable=False, default=datetime.now)
+
+    book = db.relationship('Book', backref='cart_items')
