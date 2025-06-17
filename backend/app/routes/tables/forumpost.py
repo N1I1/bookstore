@@ -155,6 +155,19 @@ def get_posts_by_book(book_id):
         'post_time': post.post_time.isoformat(),
         'browse_count': post.browse_count,
         'user_id': post.user_id
-    } for post in posts])
+    } for post in posts]), 200
 
-    
+@forum_post_bp.route('/by_user/<int:user_id>', methods=['GET'])
+def get_posts_by_user(user_id):
+    """根据 user_id 获取该用户的所有帖子"""
+    posts = ForumPost.query.filter_by(user_id=user_id, is_deleted=False).all()
+    if not posts:
+        return jsonify({"error": "No posts found for this user"}), 404
+    return jsonify([{
+        'post_id': post.post_id,
+        'book_id': post.book_id,
+        'title': post.title,
+        'content': post.content,
+        'post_time': post.post_time.isoformat(),
+        'browse_count': post.browse_count
+    } for post in posts]), 200
