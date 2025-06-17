@@ -59,7 +59,7 @@ async function register() {
 }
 
 function goLogin() {
-  router.push('/login')
+  router.push('/userlogin')
 }
 </script>
 
