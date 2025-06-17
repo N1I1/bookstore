@@ -1,27 +1,39 @@
 <!-- filepath: c:\Users\22905\Desktop\database\bookstore\frontend\src\views\Favorite.vue -->
 <template>
-  <div class="favorite-container">
+  <div class="favorite-wrapper">
     <el-card class="favorite-card">
-      <h2>收藏夹</h2>
-      <el-table :data="favoriteList" v-if="favoriteList.length" style="width: 100%">
-        <el-table-column label="书名">
+      <h2 class="favorite-title">我的收藏夹</h2>
+      <el-empty v-if="favorites.length === 0 && !loading" description="暂无收藏" />
+      <el-table
+        v-else
+        :data="favorites"
+        style="width: 100%;"
+        :loading="loading"
+        border
+      >
+        <el-table-column prop="book_id" label="书籍ID" width="100" />
+        <el-table-column label="收藏时间" width="180">
           <template #default="scope">
-            <el-link type="primary" @click="goBookDetails(scope.row.book_id)">
-              {{ scope.row.book_title }}
-            </el-link>
+            {{ formatTime(scope.row.favorite_time) }}
           </template>
         </el-table-column>
-        <el-table-column prop="favorite_time" label="收藏时间" />
-        <el-table-column label="操作" width="100">
+        <el-table-column label="操作" width="120">
           <template #default="scope">
-            <el-button type="danger" size="small" @click="removeFavorite(scope.row)">移除</el-button>
+            <el-button
+              type="danger"
+              size="small"
+              @click="removeFavorite(scope.row.book_id)"
+              :loading="removingId === scope.row.book_id"
+            >取消收藏</el-button>
+            <el-button
+              type="primary"
+              size="small"
+              @click="goBookDetail(scope.row.book_id)"
+              plain
+            >查看</el-button>
           </template>
         </el-table-column>
       </el-table>
-      <div v-else class="empty-tip">
-        暂无收藏
-      </div>
-      <el-button class="back-btn" @click="goHome">返回首页</el-button>
     </el-card>
   </div>
 </template>
@@ -29,51 +41,78 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
+const favorites = ref([])
+const loading = ref(true)
+const removingId = ref(null)
 const router = useRouter()
-const favoriteList = ref([])
 
-onMounted(() => {
-  // 实际应通过API获取
-  favoriteList.value = [
-    { book_id: 1, book_title: '三体', favorite_time: '2024-06-10 12:00' },
-    { book_id: 2, book_title: '活着', favorite_time: '2024-06-12 09:30' }
-  ]
+onMounted(async () => {
+  await fetchFavorites()
 })
 
-function goBookDetails(bookId) {
+async function fetchFavorites() {
+  loading.value = true
+  try {
+    const res = await axios.get('/api/user_favorites/', { withCredentials: true })
+    favorites.value = res.data
+  } catch (err) {
+    favorites.value = []
+    if (err.response && err.response.status === 401) {
+      ElMessage.warning('请先登录')
+    } else {
+      ElMessage.error('获取收藏失败')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+async function removeFavorite(bookId) {
+  removingId.value = bookId
+  try {
+    await axios.delete(`/api/user_favorites/${bookId}`, { withCredentials: true })
+    ElMessage.success('已取消收藏')
+    favorites.value = favorites.value.filter(fav => fav.book_id !== bookId)
+  } catch (err) {
+    if (err.response && err.response.status === 404) {
+      ElMessage.warning('收藏记录不存在')
+    } else if (err.response && err.response.status === 401) {
+      ElMessage.warning('请先登录')
+    } else {
+      ElMessage.error('取消收藏失败')
+    }
+  } finally {
+    removingId.value = null
+  }
+}
+
+function goBookDetail(bookId) {
   router.push(`/book/${bookId}`)
 }
-function removeFavorite(row) {
-  // 实际应调用后端API移除
-  favoriteList.value = favoriteList.value.filter(item => item.book_id !== row.book_id)
-  ElMessage.success('已移除收藏')
-}
-function goHome() {
-  router.push('/home')
+
+function formatTime(timeStr) {
+  if (!timeStr) return ''
+  return timeStr.replace('T', ' ').slice(0, 19)
 }
 </script>
 
 <style scoped>
-.favorite-container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 80vh;
-  background: #f5f5f5;
-  padding-top: 40px;
+.favorite-wrapper {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 24px;
 }
 .favorite-card {
-  width: 700px;
-  padding: 30px 20px;
+  padding: 32px;
 }
-.back-btn {
-  margin-top: 20px;
-}
-.empty-tip {
+.favorite-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #409eff;
+  margin-bottom: 24px;
   text-align: center;
-  color: #888;
-  margin: 40px 0;
 }
 </style>
