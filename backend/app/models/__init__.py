@@ -1,5 +1,6 @@
 from .book import Book
-from .booktag import BookTag
+from app.models.booktag import book_tag
+from .tag import Tag
 from .user import User
 from .admin import Admin
 from .userfavorite import UserFavorite
