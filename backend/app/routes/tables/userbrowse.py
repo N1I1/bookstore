@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
 from app.models.userbrowse import UserBrowse
+from app.models.book import Book
 from app import db
 
 # 创建蓝图
@@ -20,10 +21,12 @@ class UserBrowseView(MethodView):
         if not browse or browse.user_id != user_id:
             return jsonify({"error": "Forbidden"}), 403
         if browse:
+            book = db.session.get(Book, browse.book_id)
             return jsonify({
                 "browse_id": browse.browse_id,
                 "user_id": browse.user_id,
                 "book_id": browse.book_id,
+                "book_title": book.title if book else None,
                 "browse_time": browse.browse_time.isoformat()
             })
         else:
@@ -52,10 +55,12 @@ class UserBrowseView(MethodView):
 
         try:
             db.session.commit()
+            book = db.session.get(Book, browse.book_id)
             return jsonify({
                 "browse_id": browse.browse_id,
                 "user_id": browse.user_id,
                 "book_id": browse.book_id,
+                "book_title": book.title if book else None,
                 "browse_time": browse.browse_time.isoformat()
             }), 200
         except IntegrityError:
@@ -77,6 +82,7 @@ class UserBrowseView(MethodView):
         except IntegrityError:
             db.session.rollback()
             return jsonify({"error": "Failed to delete browse record"}), 400
+
 @user_browse_bp.route('/user/', methods=['GET'])
 def get_user_browses():
     """获取指定用户的所有浏览记录（仅本人可查）"""
@@ -85,15 +91,16 @@ def get_user_browses():
         return jsonify({"error": "User not logged in"}), 401
 
     browses = UserBrowse.query.filter_by(user_id=user_id).order_by(UserBrowse.browse_time.desc()).all()
-    result = [
-        {
+    result = []
+    for b in browses:
+        book = db.session.get(Book, b.book_id)
+        result.append({
             "browse_id": b.browse_id,
             "user_id": b.user_id,
             "book_id": b.book_id,
+            "book_title": book.title if book else None,
             "browse_time": b.browse_time.isoformat()
-        }
-        for b in browses
-    ]
+        })
     return jsonify(result), 200
 
 # 将 UserBrowseView 注册到蓝图

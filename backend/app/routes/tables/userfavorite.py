@@ -18,12 +18,15 @@ class UserFavoriteView(MethodView):
             return jsonify({"error": "User not logged in"}), 401
 
         favorites = UserFavorite.query.filter_by(user_id=session_user_id).all()
-        return jsonify([
-            {
+        result = []
+        for favorite in favorites:
+            book = db.session.get(Book, favorite.book_id)
+            result.append({
                 "book_id": favorite.book_id,
+                "book_title": book.title if book else None,
                 "favorite_time": favorite.favorite_time.isoformat()
-            } for favorite in favorites
-        ]),  200
+            })
+        return jsonify(result), 200
 
     def post(self):
         """处理 POST 请求，创建新的收藏记录"""
@@ -53,6 +56,7 @@ class UserFavoriteView(MethodView):
             db.session.commit()
             return jsonify({
                 "book_id": new_favorite.book_id,
+                "book_title": book.title,
                 "favorite_time": new_favorite.favorite_time.isoformat()
             }), 201
         except IntegrityError:

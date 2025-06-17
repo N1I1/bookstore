@@ -147,6 +147,43 @@
 
 ### 通过 book_id 获取相关帖子
 
+- **URL**：`GET /api/forum_posts/by_book/<book_id>`
+- **说明**：获取指定图书下的所有帖子
+- **响应**：
+  - 200 成功，返回该图书的帖子列表
+    ```json
+    [
+      {
+        "post_id": 1,
+        "title": "帖子标题",
+        "content": "帖子内容",
+        "post_time": "2025-06-17T12:34:56",
+        "browse_count": 10,
+        "user_id": 1
+      }
+    ]
+    ```
+  - 404 未找到帖子：`{"error": "No posts found for this book"}`
+
+### 通过 user_id 获取用户所有帖子
+
+- **URL**：`GET /api/forum_posts/by_user/<user_id>`
+- **说明**：获取指定用户发布的所有帖子
+- **响应**：
+  - 200 成功，返回该用户的帖子列表
+    ```json
+    [
+      {
+        "post_id": 1,
+        "book_id": 1,
+        "title": "string",
+        "content": "string",
+        "post_time": "2025-06-15T12:34:56",
+        "browse_count": 10
+      }
+    ]
+    ```
+  - 404 未找到帖子：`{"error": "No posts found for this user"}`
 
 ### 更新帖子
 
@@ -315,6 +352,7 @@
       "browse_id": 1,
       "user_id": 1,
       "book_id": 1,
+      "book_title": "book_title",
       "browse_time": "2025-06-15T12:34:56"
     }
     ```
@@ -346,6 +384,7 @@
         "browse_id": 1,
         "user_id": 1,
         "book_id": 1,
+        "book_title": "book_title",
         "browse_time": "2025-06-15T12:34:56"
       }
     ]
@@ -428,6 +467,7 @@ jsonify({"error": "Internal server error"}), 500
     [
       {
         "book_id": 1,
+        "book_title": "book_title",
         "favorite_time": "2025-06-16T12:34:56"
       }
     ]
@@ -450,6 +490,7 @@ jsonify({"error": "Internal server error"}), 500
     ```json
     {
       "book_id": 1,
+      "book_title": "book_title",
       "favorite_time": "2025-06-16T12:34:56"
     }
     ```
@@ -1047,3 +1088,81 @@ jsonify({"error": "Internal server error"}), 500
 > 订单相关接口均需登录，用户只能操作自己的订单，管理员只能操作分配给自己的订单。
 > 分配订单给管理员的功能还需要完善。
 
+## 用户购物车（UserCart）
+
+### 获取当前用户购物车
+
+- **URL**：`GET /api/user_cart/`
+- **说明**：需登录，仅返回当前登录用户的购物车项列表
+- **响应**：
+  - 200 成功，返回购物车项列表
+    ```json
+    [
+      {
+        "cart_id": 1,
+        "book_id": 1,
+        "book_title": "书名",
+        "quantity": 2,
+        "add_time": "2025-06-17T12:34:56"
+      }
+    ]
+    ```
+  - 401 未登录：`{"error": "Not logged in"}`
+
+---
+
+### 添加图书到购物车
+
+- **URL**：`POST /api/user_cart/`
+- **请求体**（JSON）：
+  ```json
+  {
+    "book_id": 1,
+    "quantity": 2   // 可选，默认为1
+  }
+  ```
+- **响应**：
+  - 201 成功：`{"message": "Added to cart", "cart_id": 1}`
+  - 400 book_id/quantity 非法：`{"error": "Invalid book_id or quantity"}`
+  - 400 已存在：`{"error": "Book already in cart"}`
+  - 404 图书不存在：`{"error": "Book not found"}`
+  - 401 未登录：`{"error": "Not logged in"}`
+
+---
+
+### 更新购物车项数量
+
+- **URL**：`PUT /api/user_cart/`
+- **请求体**（JSON）：
+  ```json
+  {
+    "cart_id": 1,
+    "quantity": 3
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "Cart updated"}`
+  - 400 cart_id/quantity 非法：`{"error": "Invalid cart_id or quantity"}`
+  - 404 购物车项不存在：`{"error": "Cart item not found"}`
+  - 401 未登录：`{"error": "Not logged in"}`
+
+---
+
+### 删除购物车项
+
+- **URL**：`DELETE /api/user_cart/`
+- **请求体**（JSON）：
+  ```json
+  {
+    "cart_id": 1
+  }
+  ```
+- **响应**：
+  - 204 成功：`{"message": "Cart item deleted"}`
+  - 400 cart_id 非法：`{"error": "Invalid cart_id"}`
+  - 404 购物车项不存在：`{"error": "Cart item not found"}`
+  - 401 未登录：`{"error": "Not logged in"}`
+
+---
+
+> 所有购物车相关接口均需先登录，登录后自动识别当前用户，无需传 user_id。
