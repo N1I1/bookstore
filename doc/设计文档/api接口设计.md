@@ -37,15 +37,66 @@
 
 - **说明**：登录成功后，`session` 自动保存用户信息。
 
+```json
+session = {
+	"user_id":int,
+	"username":"string"
+}
+```
+
 ---
 
 ### 用户登出
 
 - **URL**：`POST /api/login/logout`
 - **响应**：
-  - 200 成功：`{"message": "Logout successful"}`
+  - 200 成功：`{"message": "Logout successful"}`，`user_id`，`username`会自动删除
 
 ---
+
+### 管理员登录
+
+- **URL**：`POST /api/admin/login/`
+
+- **请求体**（JSON）：
+
+  ```json
+  {
+    "adminname": "string",
+    "password": "string"
+  }
+  ```
+
+- **响应**：
+
+  - 200 成功：`{"message": "Login successful"}`
+  - 401 用户名或密码错误 `{"error": "Invalid adminname or password"}`
+  - 400 缺少字段 `{"error": "Missing adminname or password"}`
+
+- **说明**：登录成功后，`session` 自动保存用户信息。
+
+  ```json
+  session = {
+  	"admin_id":int,
+  	"admin_username":"string"
+  }
+  ```
+
+  
+
+
+---
+
+### 管理员登出
+
+- **URL**：`POST /api/admin/login/logout`
+- **响应**：
+  - 200 成功：`{"message": "Logout successful"}`
+- **说明**：登出时，`admin_id`，`admin_username`会自动删除
+
+-----
+
+
 
 ## 用户信息
 
