@@ -19,7 +19,7 @@ def test_admin(app):
 
 def test_admin_login_success(client, test_admin):
     response = client.post('/api/admin/login/', json={
-        'adminname': 'adminuser',
+        'username': 'adminuser',
         'password': 'adminpass'
     })
     assert response.status_code == 200
@@ -27,31 +27,31 @@ def test_admin_login_success(client, test_admin):
 
 def test_admin_login_wrong_password(client, test_admin):
     response = client.post('/api/admin/login/', json={
-        'adminname': 'adminuser',
+        'username': 'adminuser',
         'password': 'wrongpass'
     })
     assert response.status_code == 401
-    assert b'Invalid adminname or password' in response.data
+    assert b'Invalid username or password' in response.data
 
 def test_admin_login_user_not_exist(client):
     response = client.post('/api/admin/login/', json={
-        'adminname': 'noadmin',
+        'username': 'noadmin',
         'password': 'nopass'
     })
     assert response.status_code == 401
-    assert b'Invalid adminname or password' in response.data
+    assert b'Invalid username or password' in response.data
 
 def test_admin_login_missing_fields(client):
     response = client.post('/api/admin/login/', json={
-        'adminname': 'adminuser'
+        'username': 'adminuser'
     })
     assert response.status_code == 400
-    assert b'Missing adminname or password' in response.data
+    assert b'Missing username or password' in response.data
 
 def test_admin_logout(client, test_admin):
     # 首先登录
     client.post('/api/admin/login/', json={
-        'adminname': 'adminuser',
+        'username': 'adminuser',
         'password': 'adminpass'
     })
     

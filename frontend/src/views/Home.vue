@@ -163,6 +163,19 @@
         </div>
       </el-card>
     </div>
+    <el-dialog
+      v-model="showLoginDialog"
+      title="提示"
+      width="340px"
+      :close-on-click-modal="false"
+      :show-close="false"
+    >
+      <div style="text-align:center;">
+        <p style="margin-bottom:18px;">请先登录后再进行操作</p>
+        <el-button @click="goHome" style="margin-right:16px;">暂不登录</el-button>
+        <el-button type="primary" @click="goUserLogin">去登录</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -357,18 +370,23 @@ async function handleTagSelect(tagId, tagName) {
   }
 }
 
+// 登录弹窗控制
+const showLoginDialog = ref(false)
+
 async function goBookDetail(bookId) {
   try {
     // 先记录浏览
     await axios.post('/api/user_browse/', { book_id: bookId }, { withCredentials: true })
+    // 跳转到详情页
+    router.push(`/book/${bookId}`)
   } catch (err) {
-    // 可以忽略错误，或者提示未登录
     if (err.response && err.response.status === 401) {
-      ElMessage.warning('请先登录以记录浏览')
+      showLoginDialog.value = true
+    } else {
+      router.push(`/book/${bookId}`)
     }
   }
-  // 跳转到详情页
-  router.push(`/book/${bookId}`)
+  
 }
 
 // 切换标签组显示
@@ -399,7 +417,16 @@ function goCart() {
 }
 
 function goUserInfo() {
+  showLoginDialog.value = false
   router.push('/user')
+}
+
+function goOrderList() {
+  router.push({ name: 'OrderList' })
+}
+
+function goPostDetail(postId) {
+  router.push({ name: 'PostDetail', params: { post_id: postId } })
 }
 
 async function logout() {
@@ -412,13 +439,6 @@ async function logout() {
   } catch (err) {
     ElMessage.error('退出登录失败')
   }
-}
-function goOrderList() {
-  router.push({ name: 'OrderList' })
-}
-
-function goPostDetail(postId) {
-  router.push({ name: 'PostDetail', params: { post_id: postId } })
 }
 
 // 论坛帖子相关状态

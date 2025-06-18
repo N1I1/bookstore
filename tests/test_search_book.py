@@ -39,7 +39,7 @@ def test_search_books_success(client, test_books):
 
     # 测试成功查询
     # 查询 "Hunger Games"
-    response = client.post('/api/search_books/search_books', json={'query': 'Hunger Games'})
+    response = client.post('/api/search_books/', json={'query': 'Hunger Games'})
     assert response.status_code == 200
     data = response.json
     assert 'message' in data
@@ -47,7 +47,7 @@ def test_search_books_success(client, test_books):
     assert len(data['books']) == 2
 
     # 查询 "Harry Potter"
-    response = client.post('/api/search_books/search_books', json={'query': 'Harry Potter'})
+    response = client.post('/api/search_books/', json={'query': 'Harry Potter'})
     assert response.status_code == 200
     data = response.json
     assert 'message' in data
@@ -55,7 +55,7 @@ def test_search_books_success(client, test_books):
     assert len(data['books']) == 3
 
     # 查找 isbn 439023483
-    response = client.post('/api/search_books/search_books', json={'query': '439023483'})
+    response = client.post('/api/search_books/', json={'query': '439023483'})
     assert response.status_code == 200
     data = response.json
     assert 'message' in data
@@ -63,7 +63,7 @@ def test_search_books_success(client, test_books):
     assert len(data['books']) == 1
 
     # 查找 作者 J.K. Rowling
-    response = client.post('/api/search_books/search_books', json={'query': 'J.K. Rowling'})
+    response = client.post('/api/search_books/', json={'query': 'J.K. Rowling'})
     assert response.status_code == 200
     data = response.json
     assert 'message' in data
@@ -71,7 +71,7 @@ def test_search_books_success(client, test_books):
     assert len(data['books']) == 3
 
     # 查找出版社 Wiley
-    response = client.post('/api/search_books/search_books', json={'query': 'Wiley'})
+    response = client.post('/api/search_books/', json={'query': 'Wiley'})
     assert response.status_code == 200
     data = response.json
     assert 'message' in data
@@ -91,7 +91,7 @@ def test_search_books_empty_result(client, test_books):
         db.session.commit()
 
     # 测试查询结果为空
-    response = client.post('/api/search_books/search_books', json={'query': 'Nonexistent Book'})
+    response = client.post('/api/search_books/', json={'query': 'Nonexistent Book'})
     assert response.status_code == 404
     data = response.json
     assert 'message' in data
@@ -109,7 +109,7 @@ def test_search_books_missing_query(client, test_books):
         db.session.commit()
 
     # 测试缺失查询参数
-    response = client.post('/api/search_books/search_books', json={})
+    response = client.post('/api/search_books/', json={})
     assert response.status_code == 400
     data = response.json
     assert 'error' in data
