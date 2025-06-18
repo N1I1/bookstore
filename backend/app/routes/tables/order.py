@@ -38,10 +38,16 @@ class OrderView(MethodView):
             order = db.session.query(Order).filter_by(order_id=order_id, is_deleted=False).first()
             if not order:
                 return jsonify({"error": "Order not found"}), 404
-            if user_id and order.user_id != user_id:
-                return jsonify({"error": "Forbidden"}), 403
-            if admin_id and order.admin_id != admin_id:
-                return jsonify({"error": "Forbidden"}), 403
+            if user_id and not admin_id:
+                if order.user_id != user_id:
+                    print("User ID mismatch:", user_id, order.user_id)
+                    return jsonify({"error": "Forbidden"}), 403
+                    
+            if admin_id:
+                if order.admin_id and order.admin_id != admin_id:
+                    print("Admin ID mismatch:", admin_id, order.admin_id)
+                    return jsonify({"error": "Forbidden"}), 403
+        
             return jsonify({
                 "order_id": order.order_id,
                 "order_status": order.order_status,
