@@ -1,6 +1,15 @@
-<!-- 管理员书籍管理界面 -->
- <template>
+<template>
   <div class="admin-book-management">
+    <el-row :gutter="24">
+      <el-col :span="24">
+        <el-button
+          type="primary"
+          icon="el-icon-arrow-left"
+          class="back-admin-btn"
+          @click="goAdminHome"
+        >返回管理员首页</el-button>
+      </el-col>
+    </el-row>
     <el-row :gutter="24">
       <!-- 标签管理区 -->
       <el-col :span="6">
@@ -14,7 +23,7 @@
               <el-button type="primary" size="small" @click="createTag" :loading="tagLoading">添加</el-button>
             </el-form-item>
           </el-form>
-          <el-table :data="tags" size="small" style="margin-top:10px;">
+          <el-table :data="pagedTags" size="small" style="margin-top:10px;">
             <el-table-column prop="tag_id" label="ID" width="50" />
             <el-table-column prop="name" label="标签名" />
             <el-table-column label="操作" width="120">
@@ -24,6 +33,13 @@
               </template>
             </el-table-column>
           </el-table>
+          <el-pagination
+            v-model:current-page="tagPage"
+            :page-size="tagPageSize"
+            :total="allTags.length"
+            layout="prev, pager, next"
+            style="margin-top:12px; text-align:right;"
+          />
           <!-- 编辑标签弹窗 -->
           <el-dialog v-model="editTagDialog" title="编辑标签" width="300px">
             <el-input v-model="editTagForm.name" placeholder="新标签名" />
@@ -40,7 +56,7 @@
         <el-card>
           <div class="section-title">书籍管理</div>
           <el-button type="primary" @click="showCreateBookDialog = true" style="margin-bottom:16px;">创建新书籍</el-button>
-          <el-table :data="books" style="width:100%;" v-loading="bookLoading">
+          <el-table :data="pagedBooks" style="width:100%;" v-loading="bookLoading">
             <el-table-column prop="book_id" label="ID" width="60" />
             <el-table-column prop="title" label="书名" />
             <el-table-column prop="author" label="作者" width="120" />
@@ -57,12 +73,11 @@
             </el-table-column>
           </el-table>
           <el-pagination
-            v-model:current-page="currentPage"
-            :page-size="pageSize"
-            :total="totalBooks"
+            v-model:current-page="bookPage"
+            :page-size="bookPageSize"
+            :total="allBooks.length"
             layout="prev, pager, next"
             style="margin-top:16px; text-align:right;"
-            @current-change="fetchBooks"
           />
         </el-card>
       </el-col>
@@ -138,7 +153,7 @@
         <!-- 图书标签管理 -->
         <el-form-item label="标签">
           <el-select v-model="selectedTagId" placeholder="选择标签" style="width:200px;">
-            <el-option v-for="tag in tags" :key="tag.tag_id" :label="tag.name" :value="tag.tag_id" />
+            <el-option v-for="tag in allTags" :key="tag.tag_id" :label="tag.name" :value="tag.tag_id" />
           </el-select>
           <el-button size="small" @click="addBookTag" :disabled="!selectedTagId">添加</el-button>
         </el-form-item>
@@ -161,25 +176,37 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
+const router = useRouter()
+function goAdminHome() {
+  router.push('/AAAHome') // 请确保路由名为 AdminHome
+}
+
 /* 标签管理相关 */
-const tags = ref([])
+const allTags = ref([])
 const tagLoading = ref(false)
 const newTag = reactive({ name: '' })
 const tagFormRef = ref(null)
 const tagRules = { name: [{ required: true, message: '请输入标签名', trigger: 'blur' }] }
 const editTagDialog = ref(false)
 const editTagForm = reactive({ tag_id: null, name: '' })
+const tagPage = ref(1)
+const tagPageSize = 25
+
+const pagedTags = computed(() => {
+  const start = (tagPage.value - 1) * tagPageSize
+  return allTags.value.slice(start, start + tagPageSize)
+})
 
 /* 书籍管理相关 */
-const books = ref([])
+const allBooks = ref([])
 const bookLoading = ref(false)
-const currentPage = ref(1)
-const pageSize = 10
-const totalBooks = ref(0)
+const bookPage = ref(1)
+const bookPageSize = 25
 const showCreateBookDialog = ref(false)
 const showBookDetailDialog = ref(false)
 const bookFormRef = ref(null)
@@ -193,6 +220,11 @@ const bookDetail = reactive({
   book_id: null, title: '', author: '', isbn: '', publisher: '', price: 0, discount: 1, stock: 0, description: '', image_url: '', tags: []
 })
 const selectedTagId = ref(null)
+
+const pagedBooks = computed(() => {
+  const start = (bookPage.value - 1) * bookPageSize
+  return allBooks.value.slice(start, start + bookPageSize)
+})
 
 /* 书籍表单校验 */
 const bookRules = {
@@ -208,13 +240,13 @@ const bookRules = {
 }
 
 /* 标签管理方法 */
-async function fetchTags() {
+async function fetchAllTags() {
   tagLoading.value = true
   try {
     const res = await axios.get('/api/tags/', { withCredentials: true })
-    tags.value = res.data
+    allTags.value = res.data.tags || res.data
   } catch (err) {
-    tags.value = []
+    allTags.value = []
   } finally {
     tagLoading.value = false
   }
@@ -224,10 +256,10 @@ async function createTag() {
     if (!valid) return
     tagLoading.value = true
     try {
-      const res = await axios.post('/api/tags/', { name: newTag.name }, { withCredentials: true })
+      await axios.post('/api/tags/', { name: newTag.name }, { withCredentials: true })
       ElMessage.success('标签创建成功')
       newTag.name = ''
-      fetchTags()
+      fetchAllTags()
     } catch (err) {
       ElMessage.error(err.response?.data?.error || '创建失败')
     } finally {
@@ -249,7 +281,7 @@ async function submitEditTag() {
     await axios.put(`/api/tags/${editTagForm.tag_id}`, { name: editTagForm.name }, { withCredentials: true })
     ElMessage.success('修改成功')
     editTagDialog.value = false
-    fetchTags()
+    fetchAllTags()
   } catch (err) {
     ElMessage.error(err.response?.data?.error || '修改失败')
   }
@@ -258,25 +290,20 @@ async function deleteTag(tag_id) {
   try {
     await axios.delete(`/api/tags/${tag_id}`, { withCredentials: true })
     ElMessage.success('删除成功')
-    fetchTags()
+    fetchAllTags()
   } catch (err) {
     ElMessage.error(err.response?.data?.error || '删除失败')
   }
 }
 
 /* 书籍管理方法 */
-async function fetchBooks() {
+async function fetchAllBooks() {
   bookLoading.value = true
   try {
-    const res = await axios.get('/api/books/', {
-      params: { page: currentPage.value, page_size: pageSize },
-      withCredentials: true
-    })
-    books.value = res.data.books || res.data
-    totalBooks.value = res.data.total || books.value.length
+    const res = await axios.get('/api/books/', { withCredentials: true })
+    allBooks.value = res.data.books || res.data
   } catch (err) {
-    books.value = []
-    totalBooks.value = 0
+    allBooks.value = []
   } finally {
     bookLoading.value = false
   }
@@ -286,10 +313,10 @@ async function createBook() {
     if (!valid) return
     bookCreateLoading.value = true
     try {
-      const res = await axios.post('/api/books/', newBook, { withCredentials: true })
+      await axios.post('/api/books/', newBook, { withCredentials: true })
       ElMessage.success('书籍创建成功')
       showCreateBookDialog.value = false
-      fetchBooks()
+      fetchAllBooks()
       // 重置表单
       Object.assign(newBook, { title: '', author: '', isbn: '', publisher: '', price: 0, discount: 1, stock: 0, description: '', image_url: '' })
     } catch (err) {
@@ -314,7 +341,7 @@ async function updateBook() {
     await axios.put(`/api/books/${bookDetail.book_id}`, payload, { withCredentials: true })
     ElMessage.success('修改成功')
     showBookDetailDialog.value = false
-    fetchBooks()
+    fetchAllBooks()
   } catch (err) {
     ElMessage.error(err.response?.data?.error || '修改失败')
   } finally {
@@ -325,7 +352,7 @@ async function deleteBook(book_id) {
   try {
     await axios.delete(`/api/books/${book_id}`, { withCredentials: true })
     ElMessage.success('删除成功')
-    fetchBooks()
+    fetchAllBooks()
   } catch (err) {
     ElMessage.error(err.response?.data?.error || '删除失败')
   }
@@ -364,8 +391,8 @@ async function removeBookTag(tag_id) {
 }
 
 onMounted(() => {
-  fetchTags()
-  fetchBooks()
+  fetchAllTags()
+  fetchAllBooks()
 })
 </script>
 
@@ -380,5 +407,8 @@ onMounted(() => {
   margin-bottom: 18px;
   border-bottom: 1px solid #eee;
   padding-bottom: 8px;
+}
+.back-admin-btn {
+  margin-bottom: 16px;
 }
 </style>
