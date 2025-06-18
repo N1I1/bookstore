@@ -48,9 +48,9 @@ def logout():
     return jsonify({"message": "Logout successful"}), 200
 
 def set_user_session(admin_user):
-    session['admin_user_id'] = admin_user.admin_id
+    session['admin_id'] = admin_user.admin_id
     session['admin_username'] = admin_user.username
 
 def clear_user_session():
-    session.pop('admin_user_id', None)
+    session.pop('admin_id', None)
     session.pop('admin_username', None)

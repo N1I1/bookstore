@@ -1,4 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import AAALogin from '../views/AAALogin.vue'
+import AAAHome from '../views/AAAHome.vue'
+import AAAOrderManagement from '../views/AAAOrderManagement.vue'
+import AAABookManagement from '../views/AAABookManagement.vue'
 import UserLogin from '../views/UserLogin.vue'
 import Register from '../views/Register.vue'
 import Home from '../views/Home.vue'
@@ -15,6 +19,10 @@ import PostDetail from '../views/PostDetail.vue'
 
 
 const routes = [
+  { path: '/aaalogin', component: AAALogin },
+  { path: '/aaahome', component: AAAHome },
+  { path: '/aaaordermanagement', component: AAAOrderManagement },
+  { path: '/aaabookmanagement', component: AAABookManagement },
   { path: '/userlogin', component: UserLogin },
   { path: '/register', component: Register },
   { path: '/home', component: Home },
