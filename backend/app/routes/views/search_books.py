@@ -52,5 +52,5 @@ class BookSearchView(MethodView):
             return jsonify({"error": str(e)}), 500
 
 # 注册视图
-book_search_bp.add_url_rule('/search_books', view_func=BookSearchView.as_view('search_books'))
+book_search_bp.add_url_rule('/', view_func=BookSearchView.as_view('search_books'))
 

@@ -94,7 +94,8 @@ def test_order_and_detail(app, user, admin_user, test_book):
     db.session.add(detail)
     db.session.commit()
     yield order, detail
-    db.session.delete(detail)
+    order.order_status = '已完成'  # 模拟订单完成
+    db.session.commit()
     db.session.delete(order)
     db.session.commit()
 

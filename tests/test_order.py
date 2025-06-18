@@ -20,16 +20,12 @@ def user(app):
     db.session.commit()
     yield user
 
-    # 删除该用户的所有订单明细和订单
     orders = Order.query.filter_by(user_id=user.user_id).all()
     for order in orders:
-        # 先删明细
-        for detail in order.order_details:
-            db.session.delete(detail)
-        db.session.delete(order)
+        order.order_status = '已完成'
     db.session.commit()
+
     for order in orders:
-        # 确保订单被删除
         db.session.delete(order)
         db.session.commit()
 
@@ -86,15 +82,15 @@ def test_book(app):
     db.session.commit()
     yield book
     order_details = OrderDetail.query.filter_by(book_id=book.book_id).all()
-    for detail in order_details:
-        # 先删明细
-        db.session.delete(detail)
+    orders_ids = set(order_detail.order_id for order_detail in order_details)
+    for order_id in orders_ids:
+        order = db.session.get(Order, order_id)
+        order.order_status = '已完成'
         db.session.commit()
-        # 再删订单（如果没有其它明细）
-        order = db.session.get(Order, detail.order_id)
-        if order and not order.order_details.count():
-            db.session.delete(order)
-            db.session.commit()
+        db.session.delete(order)
+        db.session.commit()
+
+    
     # 最后删 Book
     book_in_db = db.session.get(Book, book.book_id)
     if book_in_db:
@@ -124,13 +120,10 @@ def test_order(app, user, admin_user, test_book):
     db.session.add(detail)
     db.session.commit()
     yield order, detail
-    order_detail_in_db = db.session.get(OrderDetail, detail.detail_id)
-    if order_detail_in_db:
-        db.session.delete(order_detail_in_db)
-        db.session.commit()
     order_in_db = db.session.get(Order, order.order_id)
     if order_in_db:
-
+        order_in_db.order_status = '已完成'
+        db.session.commit()
         db.session.delete(order_in_db)
         db.session.commit()
 
@@ -206,7 +199,13 @@ def test_delete_order_user_completed(client, login_user, test_order):
     db.session.commit()
     response = client.delete(f'/api/orders/{order.order_id}')
     assert response.status_code == 204
-    assert db.session.get(Order, order.order_id) is None
+    # 软删除：应查不到未删除的订单
+    order_in_db = db.session.query(Order).filter_by(order_id=order.order_id, is_deleted=False).first()
+    assert order_in_db is None
+    # 但数据库中实际还存在（只是is_deleted=True）
+    order_in_db_any = db.session.query(Order).filter_by(order_id=order.order_id).first()
+    assert order_in_db_any is not None
+    assert order_in_db_any.is_deleted is True
 
 def test_delete_order_user_cancelled(client, login_user, test_order):
     """用户删除已取消订单"""
@@ -215,7 +214,11 @@ def test_delete_order_user_cancelled(client, login_user, test_order):
     db.session.commit()
     response = client.delete(f'/api/orders/{order.order_id}')
     assert response.status_code == 204
-    assert db.session.get(Order, order.order_id) is None
+    order_in_db = db.session.query(Order).filter_by(order_id=order.order_id, is_deleted=False).first()
+    assert order_in_db is None
+    order_in_db_any = db.session.query(Order).filter_by(order_id=order.order_id).first()
+    assert order_in_db_any is not None
+    assert order_in_db_any.is_deleted is True
 
 def test_delete_order_user_not_allowed_status(client, login_user, test_order):
     """用户删除非已完成或已取消订单应被禁止"""
@@ -699,3 +702,20 @@ def test_confirm_order_not_found(client, login_user):
     response = client.post('/api/orders/999999/confirm')
     assert response.status_code == 404
     assert b"Order not found" in response.data
+
+def test_soft_delete_order(client, login_user, test_order):
+    """测试软删除订单功能"""
+    order, _ = test_order
+    order.order_status = '已完成'
+    db.session.commit()
+    response = client.delete(f'/api/orders/{order.order_id}')
+    assert response.status_code == 204
+
+    # 订单应查不到（is_deleted=True）
+    order_in_db = db.session.query(Order).filter_by(order_id=order.order_id, is_deleted=False).first()
+    assert order_in_db is None
+
+    # 但数据库中实际还存在（只是is_deleted=True）
+    order_in_db_any = db.session.query(Order).filter_by(order_id=order.order_id).first()
+    assert order_in_db_any is not None
+    assert order_in_db_any.is_deleted is True

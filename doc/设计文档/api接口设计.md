@@ -37,15 +37,66 @@
 
 - **说明**：登录成功后，`session` 自动保存用户信息。
 
+```json
+session = {
+	"user_id":int,
+	"username":"string"
+}
+```
+
 ---
 
 ### 用户登出
 
 - **URL**：`POST /api/login/logout`
 - **响应**：
-  - 200 成功：`{"message": "Logout successful"}`
+  - 200 成功：`{"message": "Logout successful"}`，`user_id`，`username`会自动删除
 
 ---
+
+### 管理员登录
+
+- **URL**：`POST /api/admin/login/`
+
+- **请求体**（JSON）：
+
+  ```json
+  {
+    "adminname": "string",
+    "password": "string"
+  }
+  ```
+
+- **响应**：
+
+  - 200 成功：`{"message": "Login successful"}`
+  - 401 用户名或密码错误 `{"error": "Invalid adminname or password"}`
+  - 400 缺少字段 `{"error": "Missing adminname or password"}`
+
+- **说明**：登录成功后，`session` 自动保存用户信息。
+
+  ```json
+  session = {
+  	"admin_id":int,
+  	"admin_username":"string"
+  }
+  ```
+
+  
+
+
+---
+
+### 管理员登出
+
+- **URL**：`POST /api/admin/login/logout`
+- **响应**：
+  - 200 成功：`{"message": "Logout successful"}`
+- **说明**：登出时，`admin_id`，`admin_username`会自动删除
+
+-----
+
+
 
 ## 用户信息
 
@@ -402,7 +453,7 @@
 
 ### 4. 图书查询
 
-API：`/api/search_books`
+API：`/api/search_books/`
 
 方法：`POST`
 
@@ -424,7 +475,7 @@ API：`/api/search_books`
 jsonify({"error": "Missing search query"}), 400
 
 # 查询成功，找到相关图书
-jsonify({"message": "Books found", "book_ids": [list_of_book_ids]}), 200
+jsonify({"message": "Books found", "books": [list_of_books]}), 200
 
 # 查询成功，但未找到相关图书
 jsonify({"message": "No books found"}), 404
@@ -432,6 +483,38 @@ jsonify({"message": "No books found"}), 404
 # 服务器内部错误
 jsonify({"error": "Internal server error"}), 500
 ```
+
+```json
+[
+    {
+        "book_id": 1,
+        "title": "The Hunger Games",
+        "author": "Suzanne Collins",
+        "isbn": "9780439023481",
+        "publisher": "Scholastic",
+        "price": "12.99",
+        "discount": "1.00",
+        "stock": 100,
+        "description": "Book 1 of the Hunger Games series.",
+        "image_url": "http://example.com/hunger_games.jpg"
+    },
+    {
+        "book_id": 2,
+        "title": "Catching Fire",
+        "author": "Suzanne Collins",
+        "isbn": "9780439023482",
+        "publisher": "Scholastic",
+        "price": "14.99",
+        "discount": "1.00",
+        "stock": 100,
+        "description": "Book 2 of the Hunger Games series.",
+        "image_url": "http://example.com/catching_fire.jpg"
+    }
+]
+
+```
+
+
 
 ---
 
@@ -826,36 +909,96 @@ jsonify({"error": "Internal server error"}), 500
 
 ---
 
-## 推荐书籍
 
-- **URL**：`POST /api/recommend_books`
-- **权限**：仅用户
-- **请求体**（JSON，必选字段）：
-  ```json
-  {
-    "user_id": "integer"
-  }
-  ```
-- **响应**：
-  - **200 成功**：返回推荐的书籍列表
-    ```json
+
+### 推荐书籍
+
+
+​	• URL：`GET /api/recommend_books/recommend`
+
+
+​	• 权限：仅用户（需要登录状态，通过`session`获取`user_id`）
+
+
+​	• 请求参数（URL 参数，必选字段）：
+
+​		• `user_id`：用户的唯一标识符（通过`session`自动获取，无需手动传递）
+
+
+​	• 响应：
+
+
+​		• 200 成功：返回推荐的书籍列表	
+
+
+```json
     {
       "message": "Books recommended",
       "recommendations": [
         {
-          "book_id": "integer",
+          "title": "string",
+          "author": "string",
+          "isbn": "string",
+          "publisher": "string",
+          "price": "string",
+          "discount": "string",
+          "stock": "integer",
+          "description": "string",
+          "image_url": "string",
           "recommend_type": "string",
           "recommend_reason": "string"
         }
       ]
     }
-    ```
-  - **400 缺少用户ID**：`{"error": "Missing user ID"}`
-  - **404 无推荐结果**：`{"message": "No recommendations found"}`
-  - **500 服务器错误**：`{"error": "Server error"}`
-- **说明**：
-  - 该API根据用户最近浏览、购物车和收藏的书籍记录，分析出用户可能感兴趣的书籍特征（如作者和标签），并推荐相关书籍。
-  - 推荐结果包括书籍ID、推荐类型（作者推荐或标签推荐）以及推荐理由。
+```
+
+​		• 400 缺少用户ID：`{"error": "Missing user ID"}`
+
+
+​		• 404 无推荐结果：`{"message": "No recommendations found"}`
+
+
+​		• 500 服务器错误：`{"error": "Server error"}`
+
+​	示例响应
+
+​		成功（200）
+
+```json
+{
+  "message": "Books recommended",
+  "recommendations": [
+    {
+      "title": "The Hunger Games",
+      "author": "Suzanne Collins",
+      "isbn": "9780439023481",
+      "publisher": "Scholastic",
+      "price": "12.99",
+      "discount": "1.00",
+      "stock": 100,
+      "description": "Book 1 of the Hunger Games series.",
+      "image_url": "http://example.com/hunger_games.jpg",
+      "recommend_type": "作者推荐",
+      "recommend_reason": "作者：Suzanne Collins"
+    },
+    {
+      "title": "Catching Fire",
+      "author": "Suzanne Collins",
+      "isbn": "9780439023482",
+      "publisher": "Scholastic",
+      "price": "14.99",
+      "discount": "1.00",
+      "stock": 100,
+      "description": "Book 2 of the Hunger Games series.",
+      "image_url": "http://example.com/catching_fire.jpg",
+      "recommend_type": "标签推荐",
+      "recommend_reason": "标签：Adventure"
+    }
+  ]
+}
+```
+
+
 
 ---
 

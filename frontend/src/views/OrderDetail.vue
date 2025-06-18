@@ -55,6 +55,12 @@
           @click="payOrder"
           :loading="payLoading"
         >支付订单</el-button>
+        <el-button
+          v-if="order.order_status === '未支付' && !editMode"
+          type="danger"
+          @click="cancelOrder"
+          :loading="cancelLoading"
+        >取消订单</el-button>
       </div>
     </el-card>
   </div>
@@ -78,6 +84,7 @@ const editForm = ref({
 })
 const editLoading = ref(false)
 const payLoading = ref(false)
+const cancelLoading = ref(false)
 
 onMounted(fetchOrder)
 
@@ -190,6 +197,33 @@ async function payOrder() {
     }
   } finally {
     payLoading.value = false
+  }
+}
+
+async function cancelOrder() {
+  cancelLoading.value = true
+  try {
+    const res = await axios.post(`/api/orders/${order.value.order_id}/cancel`, {}, {
+      withCredentials: true
+    })
+    ElMessage.success('订单已取消')
+    await fetchOrder()
+  } catch (err) {
+    if (err.response?.status === 400) {
+      ElMessage.error('订单状态不允许取消')
+    } else if (err.response?.status === 401) {
+      ElMessage.error('请先登录')
+      router.push('/userlogin')
+    } else if (err.response?.status === 403) {
+      ElMessage.error('无权取消此订单')
+    } else if (err.response?.status === 404) {
+      ElMessage.error('订单不存在')
+      router.push({ name: 'OrderList' })
+    } else {
+      ElMessage.error('取消订单失败')
+    }
+  } finally {
+    cancelLoading.value = false
   }
 }
 </script>

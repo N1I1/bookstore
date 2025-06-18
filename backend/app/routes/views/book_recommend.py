@@ -1,8 +1,7 @@
 from flask import Blueprint, request, jsonify, session
 from flask.views import MethodView
-
-from app.models import Book, Tag, UserBrowse, UserCart, UserFavorite
 from app import db
+from app.models import Book, Tag, UserBrowse, UserCart, UserFavorite
 from collections import Counter
 
 # 定义蓝图
@@ -29,13 +28,13 @@ class BookRecommendView(MethodView):
                        [favorite.book_id for favorite in recent_favorites]
 
             # Step 2: 统计作者出现次数
-            authors = [Book.query.get(book_id).author for book_id in book_ids]
+            authors = [db.session.get(Book, book_id).author for book_id in book_ids]  # 使用 Session.get()
             most_common_author = Counter(authors).most_common(1)[0][0] if authors else None
 
             # Step 3: 统计标签出现次数
             tags = []
             for book_id in book_ids:
-                book = Book.query.get(book_id)
+                book = db.session.get(Book, book_id)  # 使用 Session.get()
                 if book:
                     tags.extend([tag.name for tag in book.tags])
             most_common_tags = [tag for tag, _ in Counter(tags).most_common(3)] if tags else []
@@ -55,8 +54,8 @@ class BookRecommendView(MethodView):
                         'author': book.author,
                         'isbn': book.isbn,
                         'publisher': book.publisher,
-                        'price': str(book.price),  # 将 Decimal 转换为字符串
-                        'discount': str(book.discount),  # 将 Decimal 转换为字符串
+                        'price': str(book.price),
+                        'discount': str(book.discount),
                         'stock': book.stock,
                         'description': book.description,
                         'image_url': book.image_url,
@@ -76,8 +75,8 @@ class BookRecommendView(MethodView):
                         'author': book.author,
                         'isbn': book.isbn,
                         'publisher': book.publisher,
-                        'price': str(book.price),  # 将 Decimal 转换为字符串
-                        'discount': str(book.discount),  # 将 Decimal 转换为字符串
+                        'price': str(book.price),
+                        'discount': str(book.discount),
                         'stock': book.stock,
                         'description': book.description,
                         'image_url': book.image_url,
