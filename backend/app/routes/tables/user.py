@@ -57,45 +57,14 @@ class UserView(MethodView):
         user_id = session.get('user_id')
         if user_id is None:
             return jsonify({"error": "User not logged in"}), 401
-            
         user = db.session.get(User, user_id)
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-        
-        from app.models.order import Order
-        
-        active_orders = db.session.query(Order).filter(
-            Order.user_id == user_id,
-            Order.order_status.not_in(['已完成', '订单取消']),
-            Order.is_deleted == False
-        ).all()
-        
-        # 如果有未完成订单，拒绝删除
-        if active_orders:
-            # 准备详细的错误信息
-            order_ids = [str(order.order_id) for order in active_orders]
-            order_str = ", ".join(order_ids)
-            
-            print(f"拒绝删除用户 {user_id}：发现未完成订单 {order_str}")
-            return jsonify({
-                "error": "您有未完成的订单，不能注销账号",
-                "order_ids": order_ids
-            }), 400
-        
-        # 如果没有未完成订单，继续删除操作
-        user = db.session.get(User, user_id)
-        if not user:
-            return jsonify({"error": "用户不存在"}), 404
-            
-        try:
+        if user:
+            # 此处可能会出现问题，因 comment forum_post都有一个外键指向user，之后再考虑
             db.session.delete(user)
             db.session.commit()
-            print(f"成功删除用户 {user_id}")
             return '', 204
-        except Exception as e:
-            db.session.rollback()
-            print(f"删除用户出错: {str(e)}")
-            return jsonify({"error": "删除账号时发生错误"}), 500
+        else:
+            return jsonify({"error": "User not found"}), 404
 
 
 # 将 UserView 注册到蓝图
