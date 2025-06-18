@@ -16,11 +16,11 @@ class AdminLoginView(MethodView):
     def post(self):
         # 获取表单数据
         data = request.json
-        username = data.get('username', None)
+        username = data.get('adminname', None)
         password = data.get('password', None)
 
         if not username or not password:
-            return jsonify({"error": "Missing username or password"}), 400
+            return jsonify({"error": "Missing adminname or password"}), 400
 
         try:
             admin_user = Admin.query.filter_by(username=username).first()
@@ -30,7 +30,7 @@ class AdminLoginView(MethodView):
                 set_user_session(admin_user)
                 return jsonify({"message": "Login successful"}), 200
             else:
-                return jsonify({"error": "Invalid username or password"}), 401
+                return jsonify({"error": "Invalid adminname or password"}), 401
         except Exception as e:
             db.session.rollback()
             ################
@@ -48,9 +48,9 @@ def logout():
     return jsonify({"message": "Logout successful"}), 200
 
 def set_user_session(admin_user):
-    session['admin_user_id'] = admin_user.admin_id
+    session['admin_id'] = admin_user.admin_id
     session['admin_username'] = admin_user.username
 
 def clear_user_session():
-    session.pop('admin_user_id', None)
+    session.pop('admin_id', None)
     session.pop('admin_username', None)
