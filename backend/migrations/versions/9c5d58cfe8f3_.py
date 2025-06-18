@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 73c10fd387fe
+Revision ID: 9c5d58cfe8f3
 Revises: 
-Create Date: 2025-06-18 23:03:12.709601
+Create Date: 2025-06-18 14:26:17.391046
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '73c10fd387fe'
+revision = '9c5d58cfe8f3'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -66,8 +66,8 @@ def upgrade():
     op.create_table('book_tag',
     sa.Column('book_id', sa.Integer(), nullable=False),
     sa.Column('tag_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['tag_id'], ['tag.tag_id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ),
+    sa.ForeignKeyConstraint(['tag_id'], ['tag.tag_id'], ),
     sa.PrimaryKeyConstraint('book_id', 'tag_id')
     )
     op.create_table('complaint',
@@ -75,22 +75,22 @@ def upgrade():
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('complaint_time', sa.DateTime(), nullable=False),
-    sa.Column('status', sa.Enum('待处理', '已受理', '已解决', name='complaint_status'), nullable=False),
+    sa.Column('status', sa.Enum('待处理', '已处理', name='complaint_status'), nullable=False),
     sa.Column('result', sa.Text(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('complaint_id')
     )
     op.create_table('forum_post',
     sa.Column('post_id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('book_id', sa.Integer(), nullable=True),
     sa.Column('title', sa.String(length=255), nullable=False),
     sa.Column('content', sa.Text(), nullable=True),
     sa.Column('post_time', sa.DateTime(), nullable=False),
     sa.Column('browse_count', sa.Integer(), nullable=False),
     sa.Column('is_deleted', sa.Boolean(), nullable=True),
-    sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('post_id')
     )
     op.create_table('order',
@@ -109,8 +109,7 @@ def upgrade():
     sa.Column('biller_phone', sa.String(length=20), nullable=False),
     sa.Column('remark', sa.Text(), nullable=True),
     sa.Column('total_amount', sa.Numeric(precision=10, scale=2), nullable=False),
-    sa.Column('is_deleted', sa.Boolean(), nullable=True),
-    sa.ForeignKeyConstraint(['admin_id'], ['admin.admin_id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['admin_id'], ['admin.admin_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('order_id')
     )
@@ -125,42 +124,42 @@ def upgrade():
     op.create_table('user_browse',
     sa.Column('browse_id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('book_id', sa.Integer(), nullable=True),
+    sa.Column('book_id', sa.Integer(), nullable=False),
     sa.Column('browse_time', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('browse_id')
     )
     op.create_table('user_cart',
     sa.Column('cart_id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('book_id', sa.Integer(), nullable=True),
+    sa.Column('book_id', sa.Integer(), nullable=False),
     sa.Column('quantity', sa.Integer(), nullable=False),
     sa.Column('add_time', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('cart_id')
     )
     op.create_table('user_favorite',
     sa.Column('favorite_id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('book_id', sa.Integer(), nullable=True),
+    sa.Column('book_id', sa.Integer(), nullable=False),
     sa.Column('favorite_time', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('favorite_id')
     )
     op.create_table('comment',
     sa.Column('comment_id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('post_id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('content', sa.Text(), nullable=True),
     sa.Column('comment_time', sa.DateTime(), nullable=False),
     sa.Column('parent_comment_id', sa.Integer(), nullable=True),
     sa.Column('is_deleted', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['parent_comment_id'], ['comment.comment_id'], ),
     sa.ForeignKeyConstraint(['post_id'], ['forum_post.post_id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('comment_id')
     )
     op.create_table('order_detail',

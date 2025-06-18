@@ -25,6 +25,7 @@ def test_register_user(client):
     }
     response = client.post('/api/register/', json=register_data)
     assert response.status_code == 201, "Failed to register user"
+    user_id = response.json['user_id']
 
 @pytest.fixture(scope='function')
 def login_user(client):
