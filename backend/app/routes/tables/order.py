@@ -20,7 +20,7 @@ class OrderView(MethodView):
         if order_id is None:
             # 查询订单列表
             if user_id:
-                orders = Order.query.filter_by(user_id=user_id).all()
+                orders = Order.query.filter_by(user_id=user_id, is_deleted=False).all()
             elif admin_id:
                 orders = Order.query.filter_by(admin_id=admin_id).all()
             else:
@@ -35,7 +35,7 @@ class OrderView(MethodView):
             ])
         else:
             # 查询单个订单
-            order = db.session.get(Order, order_id)
+            order = db.session.query(Order).filter_by(order_id=order_id, is_deleted=False).first()
             if not order:
                 return jsonify({"error": "Order not found"}), 404
             if user_id and order.user_id != user_id:
@@ -136,7 +136,7 @@ class OrderView(MethodView):
 
     def put(self, order_id):
         """用户修改订单地址、备注等信息"""
-        order = db.session.get(Order, order_id)
+        order = db.session.query(Order).filter_by(order_id=order_id, is_deleted=False).first()
         if not order:
             return jsonify({"error": "Order not found"}), 404
 
@@ -163,7 +163,7 @@ class OrderView(MethodView):
 
     def delete(self, order_id):
         """删除订单（仅用户可删已完成或已取消订单）"""
-        order = db.session.get(Order, order_id)
+        order = db.session.query(Order).filter_by(order_id=order_id, is_deleted=False).first()
         if not order:
             return jsonify({"error": "Order not found"}), 404
         user_id = session.get('user_id')
@@ -171,10 +171,8 @@ class OrderView(MethodView):
             return jsonify({"error": "Forbidden"}), 403
         if order.order_status not in ['已完成', '订单取消']:
                 return jsonify({"error": "Only complete orders can be deleted"}), 400
-        # 级联删除明细
-        for detail in order.order_details:
-            db.session.delete(detail)
-        db.session.delete(order)
+
+        order.is_deleted = True  # 软删除
         db.session.commit()
         return '', 204
 
@@ -190,7 +188,7 @@ def user_pay_order(order_id):
     user_id = session.get('user_id')
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
-    order = db.session.get(Order, order_id)
+    order = db.session.query(Order).filter_by(order_id=order_id, is_deleted=False).first()
     if not order:
         return jsonify({"error": "Order not found"}), 404
     if order.user_id != user_id:
@@ -208,7 +206,7 @@ def user_cancel_order(order_id):
     user_id = session.get('user_id')
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
-    order = db.session.get(Order, order_id)
+    order = db.session.query(Order).filter_by(order_id=order_id, is_deleted=False).first()
     if not order:
         return jsonify({"error": "Order not found"}), 404
     if order.user_id != user_id:
@@ -225,7 +223,7 @@ def user_confirm_order(order_id):
     user_id = session.get('user_id')
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
-    order = db.session.get(Order, order_id)
+    order = db.session.query(Order).filter_by(order_id=order_id, is_deleted=False).first()
     if not order:
         return jsonify({"error": "Order not found"}), 404
     if order.user_id != user_id:
@@ -243,7 +241,7 @@ def admin_ship_order(order_id):
     admin_id = session.get('admin_id')
     if not admin_id:
         return jsonify({"error": "Unauthorized"}), 401
-    order = db.session.get(Order, order_id)
+    order = db.session.query(Order).filter_by(order_id=order_id, is_deleted=False).first()
     if not order:
         return jsonify({"error": "Order not found"}), 404
     if order.admin_id != admin_id:
@@ -269,7 +267,7 @@ def admin_update_ship_address(order_id):
     admin_id = session.get('admin_id')
     if not admin_id:
         return jsonify({"error": "Unauthorized"}), 401
-    order = db.session.get(Order, order_id)
+    order = db.session.query(Order).filter_by(order_id=order_id).first()
     if not order:
         return jsonify({"error": "Order not found"}), 404
     if order.admin_id != admin_id:

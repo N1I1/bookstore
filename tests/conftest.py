@@ -10,3 +10,8 @@ def app():
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+@pytest.fixture(autouse=True)
+def app_context(app):
+    with app.app_context():
+        yield

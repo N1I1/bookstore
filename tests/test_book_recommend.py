@@ -3,11 +3,13 @@ import json
 from app import create_app, db
 from app.models import Book, Tag, UserBrowse, UserCart, UserFavorite, User, book_tag
 
+
 @pytest.fixture
 def app():
     app = create_app()
     with app.app_context():
         yield app
+
 
 @pytest.fixture
 def client(app):
@@ -109,3 +111,4 @@ def test_delete_data(client):
     db.session.query(Tag).delete()
     db.session.query(User).delete()
     db.session.commit()
+
