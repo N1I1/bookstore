@@ -67,6 +67,27 @@
         </div>
       </div>
     </el-card>
+    <!-- 相关帖子区块 -->
+    <el-card class="related-posts-card" style="margin-top: 32px;">
+      <h3 class="related-title">相关帖子</h3>
+      <el-skeleton v-if="postsLoading" rows="4" animated />
+      <el-empty v-else-if="relatedPosts.length === 0" description="暂无相关帖子" />
+      <div v-else>
+        <div
+          v-for="post in relatedPosts"
+          :key="post.post_id"
+          class="related-post-item"
+          @click="goPostDetail(post.post_id)"
+        >
+          <div class="post-title">{{ post.title || 'Untitled Post' }}</div>
+          <div class="post-content">{{ post.content }}</div>
+          <div class="post-meta">
+            <span>浏览：{{ post.browse_count }}</span>
+            <span style="margin-left:16px;">时间：{{ post.post_time?.slice(0,16).replace('T',' ') }}</span>
+          </div>
+        </div>
+      </div>
+    </el-card>
   </div>
   
   <el-empty v-else description="未找到该书籍" />
@@ -84,6 +105,8 @@ const book = ref(null)
 const defaultImg = 'https://img1.baidu.com/it/u=1609036816,3547813773&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=750'
 const favLoading = ref(false)
 const cartLoading = ref(false)
+const relatedPosts = ref([])
+const postsLoading = ref(true)
 
 onMounted(async () => {
   const bookId = route.params.id
@@ -91,7 +114,6 @@ onMounted(async () => {
     // 获取书籍详情
     const res = await axios.get(`/api/books/${bookId}`)
     book.value = res.data
-    
     // 记录浏览
     try {
       await axios.post('/api/user_browse/', { book_id: bookId }, { withCredentials: true })
@@ -105,6 +127,16 @@ onMounted(async () => {
     } else {
       ElMessage.error('获取书籍信息失败')
     }
+  }
+
+  // 获取相关帖子
+  try {
+    const res = await axios.get(`/api/forum_posts/by_book/${bookId}`)
+    relatedPosts.value = res.data
+  } catch (err) {
+    relatedPosts.value = []
+  } finally {
+    postsLoading.value = false
   }
 })
 
@@ -177,6 +209,10 @@ async function addFavorite() {
 }
 function goCreatePost() {
   router.push({ name: 'CreatePost', query: { book_id: book.value?.book_id || '' } })
+}
+
+function goPostDetail(postId) {
+  router.push({ name: 'PostDetail', params: { post_id: postId } })
 }
 </script>
 
@@ -321,4 +357,54 @@ function goCreatePost() {
   width: 120px;
   align-self: flex-start;
 }
+/* ...existing code... */
+.related-posts-card {
+  margin-top: 32px;
+  padding: 24px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.related-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #409eff;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+.related-post-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.related-post-item:last-child {
+  border-bottom: none;
+}
+.related-post-item:hover {
+  background: #f9f9f9;
+}
+.post-title {
+  font-weight: bold;
+  color: #333;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.post-content {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5em;
+}
+.post-meta {
+  color: #aaa;
+  font-size: 12px;
+}
+/* ...existing code... */
 </style>
