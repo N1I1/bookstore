@@ -22,7 +22,17 @@
         :loading="loading"
         border
       >
-        <el-table-column prop="book_id" label="书籍ID" width="100" />
+        <el-table-column label="书名" min-width="200">
+          <template #default="scope">
+            <el-link
+              type="primary"
+              @click="goBookDetail(scope.row.book_id)"
+              style="font-size: 16px;"
+            >
+              {{ scope.row.book_title || '未知书名' }}
+            </el-link>
+          </template>
+        </el-table-column>
         <el-table-column label="收藏时间" width="180">
           <template #default="scope">
             {{ formatTime(scope.row.favorite_time) }}
