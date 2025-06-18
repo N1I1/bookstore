@@ -402,7 +402,7 @@
 
 ### 4. 图书查询
 
-API：`/api/search_books`
+API：`/api/search_books/`
 
 方法：`POST`
 
