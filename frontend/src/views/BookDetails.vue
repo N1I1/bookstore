@@ -28,6 +28,7 @@
         <div class="book-details-main">
           <div class="img-and-cart">
             
+          <img :src="book.image_url || defaultImg" class="book-img" alt="封面" />
             
             <!-- 图片下方添加加入购物车按钮 -->
             <el-button 
