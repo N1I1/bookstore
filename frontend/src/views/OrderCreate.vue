@@ -68,13 +68,6 @@ async function submitOrder() {
     quantity: item.quantity
   }))
 
-  // 调试用，查看实际请求体
-  console.log({
-    details,
-    bill_address: form.value.bill_address,
-    biller_phone: form.value.biller_phone,
-    remark: form.value.remark
-  })
 
   loading.value = true
   try {

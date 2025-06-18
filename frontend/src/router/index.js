@@ -10,8 +10,8 @@ import Favorite from '../views/Favorite.vue'
 import CreatePost from '../views/CreatePost.vue'
 import OrderList from '../views/OrderList.vue'
 import OrderDetail from '../views/OrderDetail.vue'
-import OrderCreate from '../views/OrderCreate.vue'
 import OrderEdit from '../views/OrderEdit.vue'
+import PostDetail from '../views/PostDetail.vue'
 
 
 const routes = [
@@ -31,7 +31,8 @@ const routes = [
     path: '/order/create',
     name: 'OrderCreate',
     component: () => import('../views/OrderCreate.vue')
-  }
+  },
+  { path: '/post/:post_id', name: 'PostDetail', component: PostDetail },
 ]
 
 const router = createRouter({

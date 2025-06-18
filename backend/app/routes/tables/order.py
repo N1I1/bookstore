@@ -130,6 +130,7 @@ class OrderView(MethodView):
         except KeyError as e:
             return jsonify({"error": f"Missing required field: {e.args[0]}"}), 400
         except Exception as e:
+            print(e)
             db.session.rollback()
             return jsonify({"error": "Server error"}), 400
 
@@ -161,15 +162,15 @@ class OrderView(MethodView):
             return jsonify({"error": "Unauthorized"}), 401
 
     def delete(self, order_id):
-        """删除订单（仅用户可删自己的未支付订单）"""
+        """删除订单（仅用户可删已完成或已取消订单）"""
         order = db.session.get(Order, order_id)
         if not order:
             return jsonify({"error": "Order not found"}), 404
         user_id = session.get('user_id')
         if not user_id or order.user_id != user_id:
             return jsonify({"error": "Forbidden"}), 403
-        if order.order_status != '未支付':
-            return jsonify({"error": "Only unpaid orders can be deleted"}), 400
+        if order.order_status not in ['已完成', '订单取消']:
+                return jsonify({"error": "Only complete orders can be deleted"}), 400
         # 级联删除明细
         for detail in order.order_details:
             db.session.delete(detail)

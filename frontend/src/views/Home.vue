@@ -150,7 +150,13 @@
         <el-skeleton v-if="loading" rows="5" animated />
         <el-empty v-else-if="posts.length === 0" description="暂无帖子" />
         <div v-else class="forum-posts-list">
-          <div v-for="post in posts" :key="post.id" class="forum-post-item">
+          <!-- 添加点击事件：@click="goPostDetail(post.id)" -->
+          <div 
+            v-for="post in posts" 
+            :key="post.id" 
+            class="forum-post-item"
+            @click="goPostDetail(post.id)"
+          >
             <div class="post-title">{{ post.title }}</div>
             <div class="post-content">{{ post.content }}</div>
           </div>
@@ -269,7 +275,7 @@ const searchBooks = async () => {
       
       // 从全部书籍中过滤出匹配的书籍
       const foundBooks = books.value.filter(book => 
-        foundBookIds.includes(book.book_id.toString())
+        foundBookIds.includes(Number(book.book_id))
       )
       
       filteredBooks.value = foundBooks
@@ -409,6 +415,10 @@ async function logout() {
 }
 function goOrderList() {
   router.push({ name: 'OrderList' })
+}
+
+function goPostDetail(postId) {
+  router.push({ name: 'PostDetail', params: { post_id: postId } })
 }
 
 // 论坛帖子相关状态
