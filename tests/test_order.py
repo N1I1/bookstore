@@ -20,16 +20,12 @@ def user(app):
     db.session.commit()
     yield user
 
-    # 删除该用户的所有订单明细和订单
     orders = Order.query.filter_by(user_id=user.user_id).all()
     for order in orders:
-        # 先删明细
-        for detail in order.order_details:
-            db.session.delete(detail)
-        db.session.delete(order)
+        order.order_status = '已完成'
     db.session.commit()
+
     for order in orders:
-        # 确保订单被删除
         db.session.delete(order)
         db.session.commit()
 
@@ -86,15 +82,15 @@ def test_book(app):
     db.session.commit()
     yield book
     order_details = OrderDetail.query.filter_by(book_id=book.book_id).all()
-    for detail in order_details:
-        # 先删明细
-        db.session.delete(detail)
+    orders_ids = set(order_detail.order_id for order_detail in order_details)
+    for order_id in orders_ids:
+        order = db.session.get(Order, order_id)
+        order.order_status = '已完成'
         db.session.commit()
-        # 再删订单（如果没有其它明细）
-        order = db.session.get(Order, detail.order_id)
-        if order and not order.order_details.count():
-            db.session.delete(order)
-            db.session.commit()
+        db.session.delete(order)
+        db.session.commit()
+
+    
     # 最后删 Book
     book_in_db = db.session.get(Book, book.book_id)
     if book_in_db:
@@ -124,13 +120,10 @@ def test_order(app, user, admin_user, test_book):
     db.session.add(detail)
     db.session.commit()
     yield order, detail
-    order_detail_in_db = db.session.get(OrderDetail, detail.detail_id)
-    if order_detail_in_db:
-        db.session.delete(order_detail_in_db)
-        db.session.commit()
     order_in_db = db.session.get(Order, order.order_id)
     if order_in_db:
-
+        order_in_db.order_status = '已完成'
+        db.session.commit()
         db.session.delete(order_in_db)
         db.session.commit()
 
