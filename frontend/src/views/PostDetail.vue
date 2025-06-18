@@ -5,8 +5,21 @@
       <div style="color:#888;font-size:13px;">
         发布时间：{{ post.post_time }}　浏览：{{ post.browse_count }}
       </div>
-      <div v-if="post.book_id" style="margin:10px 0;">
-        关联书籍ID：<router-link :to="`/book/${post.book_id}`">{{ post.book_id }}</router-link>
+      <div v-if="post.book_id && book" style="margin:10px 0;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <img :src="book.image_url || 'https://img1.baidu.com/it/u=1609036816,3547813773&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=750'" alt="封面" style="width:60px;height:90px;object-fit:cover;border-radius:4px;">
+          <div>
+            <div>
+              <router-link :to="`/book/${book.book_id}`" style="font-weight:bold;font-size:16px;">{{ book.title }}</router-link>
+            </div>
+            <div>作者：{{ book.author }}</div>
+            <div>出版社：{{ book.publisher }}</div>
+            <div>ISBN：{{ book.isbn }}</div>
+            <div>价格：<span style="color:#e4393c;">￥{{ book.price }}</span> <span v-if="book.discount < 1" style="color:#409eff;">（{{ (book.discount * 10).toFixed(1) }}折）</span></div>
+            <div>库存：{{ book.stock }}</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;color:#666;">{{ book.description }}</div>
       </div>
       <div class="post-content" style="margin:20px 0;">{{ post.content }}</div>
       <el-divider />
@@ -55,6 +68,7 @@ const comments = ref([])
 const newComment = ref('')
 const commentLoading = ref(false)
 const currentUserId = ref(null) // 你可以从用户信息接口获取
+const book = ref(null)
 
 onMounted(() => {
   fetchPost()
@@ -67,6 +81,9 @@ async function fetchPost() {
     post.value = {
       ...res.data,
       post_time: formatTime(res.data.post_time)
+    }
+    if (post.value.book_id) {
+      fetchBookDetail(post.value.book_id)
     }
     fetchComments()
   } catch (err) {
@@ -82,6 +99,15 @@ async function fetchComments() {
     comments.value = res.data
   } catch (err) {
     comments.value = []
+  }
+}
+
+async function fetchBookDetail(bookId) {
+  try {
+    const res = await axios.get(`/api/books/${bookId}`)
+    book.value = res.data
+  } catch (err) {
+    book.value = null
   }
 }
 
