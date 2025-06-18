@@ -54,3 +54,4 @@ def set_user_session(admin_user):
 def clear_user_session():
     session.pop('admin_id', None)
     session.pop('admin_username', None)
+
