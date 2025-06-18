@@ -155,7 +155,7 @@
             v-for="post in posts" 
             :key="post.id" 
             class="forum-post-item"
-            @click="goPostDetail(post.id)"
+            @click="goPostDetail(post.post_id)"
           >
             <div class="post-title">{{ post.title }}</div>
             <div class="post-content">{{ post.content }}</div>
