@@ -32,6 +32,13 @@
             icon="el-icon-s-management"
             @click="goBookManagement"
           >图书管理</el-button>
+          <el-button 
+            type="warning"
+            size="large"
+            icon="el-icon-s-management" 
+            @click="goComplaintManage" 
+            style="margin-left:16px;"
+          >处理投诉</el-button>
         </div>
       </el-card>
     </main>
@@ -50,6 +57,10 @@ function goOrderManagement() {
 }
 function goBookManagement() {
   router.push('/AAABookManagement') // 请确保路由名正确
+}
+
+function goComplaintManage() {
+  router.push('/AAAComplaintManage') // 路由名请与下方页面一致
 }
 
 async function logout() {
