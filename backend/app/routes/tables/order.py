@@ -288,18 +288,22 @@ def admin_update_ship_address(order_id):
     db.session.commit()
     return jsonify({"message": "Shipping address updated successfully"})
 
+@order_bp.route('/assign_admin', methods=['POST'])
 def assign_admin_to_orders():
     # 查询所有未分配管理员的订单
+    admin_id = session.get('admin_id')
+    if not admin_id:
+        return jsonify({"error": "Unauthorized"}), 401
     unassigned_orders = Order.query.filter_by(admin_id=None, order_status='已支付').all()
     if not unassigned_orders:
         print("没有需要分配的订单")
-        return
+        return jsonify({"error": "No orders to assign"}), 404
 
     # 查询所有管理员及其当前订单数
     admins = Admin.query.all()
     if not admins:
         print("没有可用的管理员")
-        return
+        return jsonify({"error": "No available admins"}), 404
 
     # 统计每个管理员当前已分配的订单数
     admin_order_counts = {
@@ -314,4 +318,4 @@ def assign_admin_to_orders():
         admin_order_counts[min_admin_id] += 1  # 该管理员订单数+1
 
     db.session.commit()
-    print(f"已为{len(unassigned_orders)}个订单分配管理员")
+    return jsonify({"message": f"已为{len(unassigned_orders)}个订单分配管理员"}), 200
