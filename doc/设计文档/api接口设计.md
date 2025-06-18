@@ -1319,6 +1319,7 @@ jsonify({"error": "Internal server error"}), 500
   }
   ```
 - **响应**：
+  
   - 204 成功：`{"message": "Cart item deleted"}`
   - 400 cart_id 非法：`{"error": "Invalid cart_id"}`
   - 404 购物车项不存在：`{"error": "Cart item not found"}`
@@ -1327,3 +1328,79 @@ jsonify({"error": "Internal server error"}), 500
 ---
 
 > 所有购物车相关接口均需先登录，登录后自动识别当前用户，无需传 user_id。
+
+### 用户获取投诉信息
+
+- **URL**：`GET /api/complaint_manage/user_get`
+- **请求体**（JSON）：
+  ```json
+  {
+    "status": "可选参数，投诉状态，如'待处理'、'已受理'、'已解决'"
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "Complaints found", "complaints": [{"content": "投诉内容", "complaint_time": "投诉时间", "status": "投诉状态", "result": "处理结果", "username": "用户名"}]}`
+  - 401 用户未登录：`{"error": "User not logged in"}`
+  - 404 未找到投诉信息：`{"message": "No complaints found"}`
+  - 500 服务器错误：`{"error": "服务器错误信息"}`
+
+### 用户创建投诉
+
+- **URL**：`POST /api/complaint_manage/user_create`
+- **请求体**（JSON）：
+  ```json
+  {
+    "content": "投诉内容"
+  }
+  ```
+- **响应**：
+  - 201 成功：`{"message": "Complaint created successfully"}`
+  - 400 投诉内容为空：`{"error": "Complaint content cannot be empty"}`
+  - 401 用户未登录：`{"error": "User not logged in"}`
+  - 500 服务器错误：`{"error": "服务器错误信息"}`
+
+### 用户更新投诉状态
+
+- **URL**：`POST /api/complaint_manage/user_change_status`
+- **请求体**（JSON）：
+  ```json
+  {
+    "complaint_id": "投诉ID"
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "Complaint status updated successfully"}`
+  - 400 投诉状态不是“已受理”：`{"error": "Complaint status is not '已受理'", "cur_status": "当前状态"}`
+  - 401 用户未登录：`{"error": "User not logged in"}`
+  - 404 投诉不存在或无权限修改：`{"error": "Complaint not found or you do not have permission to modify it"}`
+  - 500 服务器错误：`{"error": "服务器错误信息"}`
+
+### 管理员获取投诉信息
+
+- **URL**：`GET /api/complaint_manage/admin_get`
+- **请求参数**：
+  ```
+  status=可选参数，投诉状态，如'待处理'、'已受理'、'已解决',None(表示全部状态)
+  ```
+- **响应**：
+  - 200 成功：`{"message": "Complaints found", "complaints": [{"complaint_id": "投诉ID", "user_id": "用户ID", "username": "用户名", "content": "投诉内容", "complaint_time": "投诉时间", "status": "投诉状态", "result": "处理结果"}]}`
+  - 404 未找到投诉信息：`{"message": "No complaints found"}`
+  - 500 服务器错误：`{"error": "服务器错误信息"}`
+
+### 管理员处理投诉
+
+- **URL**：`POST /api/complaint_manage/deal_with_complaint`
+- **请求体**（JSON）：
+  ```json
+  {
+    "complaint_id": "投诉ID",
+    "result": "处理结果"
+  }
+  ```
+- **响应**：
+  - 200 成功：`{"message": "Complaint processed successfully"}`
+  - 400 缺少投诉ID或处理结果：`{"error": "Missing complaint_id or result"}`
+  - 401 管理员未登录：`{"error": "Admin not logged in"}`
+  - 404 投诉不存在：`{"error": "Complaint not found"}`
+  - 400 投诉状态不是“待处理”：`{"error": "Complaint status is not 'Pending'"}`
+  - 500 服务器错误：`{"error": "服务器错误信息"}`

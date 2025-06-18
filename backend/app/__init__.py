@@ -97,8 +97,10 @@ def create_app():
 
     from app.routes.views.search_books import book_search_bp
     from app.routes.views.book_recommend import book_recommend_bp
+    from app.routes.views.complaint_manage import complaint_manage_bp
 
     app.register_blueprint(book_search_bp)
     app.register_blueprint(book_recommend_bp)
+    app.register_blueprint(complaint_manage_bp)
     
     return app
