@@ -1,5 +1,15 @@
 <template>
   <div class="admin-order-management">
+    <el-row :gutter="24">
+      <el-col :span="24">
+        <el-button
+          type="primary"
+          icon="el-icon-arrow-left"
+          class="back-admin-btn"
+          @click="goAdminHome"
+        >返回管理员首页</el-button>
+      </el-col>
+    </el-row>
     <el-card>
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <h2>分配给我的订单</h2>
@@ -87,6 +97,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
 
 const orders = ref([])
 const loading = ref(true)
@@ -100,6 +111,11 @@ const shipForm = reactive({
 const shipLoading = ref(false)
 const editShipLoading = ref(false)
 const assigning = ref(false)
+const router = useRouter()
+
+function goAdminHome() {
+  router.push('/AAAHome') // 请确保路由名为 AdminHome
+}
 
 onMounted(fetchOrders)
 

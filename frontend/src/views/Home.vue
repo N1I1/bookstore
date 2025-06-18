@@ -1,10 +1,14 @@
-<!-- filepath: c:\Users\22905\Desktop\database\bookstore\frontend\src\views\Home.vue -->
 <template>
   <div class="home-container">
+    <!-- 顶部导航栏 -->
     <el-header class="header">
-      <div class="logo">网上书店</div>
+      <div class="logo">
+        <el-icon><Reading /></el-icon>
+        <span>网上书店</span>
+      </div>
+      
       <div class="header-actions">
-        <!-- 添加搜索框 -->
+        <!-- 搜索框 -->
         <div class="search-container">
           <el-input
             v-model="searchQuery"
@@ -14,129 +18,204 @@
             @clear="resetSearch"
           >
             <template #append>
-              <el-button icon="el-icon-search" @click="searchBooks" />
+              <el-button type="primary" icon="Search" @click="searchBooks" />
             </template>
           </el-input>
         </div>
+
+        <!-- 功能按钮组 -->
+        <div class="action-buttons">
+          <el-tooltip content="投诉建议" placement="bottom">
+            <el-button type="warning" circle @click="goComplaint">
+              <el-icon><Warning /></el-icon>
+            </el-button>
+          </el-tooltip>
+          
+          <el-tooltip content="我的订单" placement="bottom">
+            <el-button type="primary" circle @click="goOrderList">
+              <el-icon><Tickets /></el-icon>
+            </el-button>
+          </el-tooltip>
+          
+          <el-tooltip content="发布帖子" placement="bottom">
+            <el-button type="success" circle @click="goCreatePost">
+              <el-icon><Edit /></el-icon>
+            </el-button>
+          </el-tooltip>
+          
+          <el-tooltip content="浏览记录" placement="bottom">
+            <el-button type="info" circle @click="goBrowse">
+              <el-icon><Clock /></el-icon>
+            </el-button>
+          </el-tooltip>
+          
+          <el-tooltip content="我的收藏" placement="bottom">
+            <el-button type="danger" circle @click="goFavorite">
+              <el-icon><Star /></el-icon>
+            </el-button>
+          </el-tooltip>
+          
+          <el-tooltip content="购物车" placement="bottom">
+            <el-button type="primary" circle @click="goCart">
+              <el-icon><ShoppingCart /></el-icon>
+            </el-button>
+          </el-tooltip>
+        </div>
         
-        <!-- 我的订单 -->
-        <el-button type="primary" @click="goOrderList" class="order-btn">
-          我的订单
-        </el-button>
-        
-        <!-- 发帖按钮 -->
-        <el-button type="text" class="post-btn" @click="goCreatePost">
-          <el-icon><i class="el-icon-edit"></i></el-icon>
-          <span style="margin-left:4px;">发帖</span>
-        </el-button>
-        
-        <!-- 浏览记录按钮 -->
-        <el-button type="text" class="history-btn" @click="goBrowse">
-          <el-icon><i class="el-icon-view"></i></el-icon>
-          <span style="margin-left:4px;">浏览记录</span>
-        </el-button>
-        
-        <!-- 收藏夹按钮 -->
-        <el-button type="text" class="favorite-btn" @click="goFavorite">
-          <el-icon><i class="el-icon-star-on"></i></el-icon>
-          <span style="margin-left:4px;">收藏夹</span>
-        </el-button>
-        
-        <!-- 购物车按钮 -->
-        <el-button type="text" class="cart-btn" @click="goCart">
-          <el-icon><i class="el-icon-shopping-cart-full"></i></el-icon>
-          <span style="margin-left:4px;">购物车</span>
-        </el-button>
-        
-        <!-- 用户头像和名字 -->
-        <el-avatar icon="el-icon-user" @click="goUserInfo" style="cursor:pointer;" />
-        <span class="username">欢迎，{{ username }}</span>
-        <el-button type="text" @click="logout">退出登录</el-button>
+        <!-- 用户信息 -->
+        <div class="user-section">
+          <el-avatar :size="36" :src="userAvatar" @click="goUserInfo" />
+          <span class="username">欢迎，{{ username }}</span>
+          <el-button type="text" @click="logout">
+            <el-icon><SwitchButton /></el-icon>
+            <span>退出</span>
+          </el-button>
+        </div>
       </div>
     </el-header>
     
     <!-- 搜索状态提示 -->
     <div v-if="searchStatus" class="search-status">
-      <el-tag :type="searchStatus.type">{{ searchStatus.message }}</el-tag>
-      <el-button v-if="isSearching" type="text" @click="resetSearch">返回全部书籍</el-button>
+      <el-tag :type="searchStatus.type" size="large" round>
+        {{ searchStatus.message }}
+      </el-tag>
+      <el-button v-if="isSearching" type="text" @click="resetSearch">
+        <el-icon><Back /></el-icon>
+        <span>返回全部书籍</span>
+      </el-button>
     </div>
     
+    <!-- 主内容区 -->
     <div class="main-content">
-      <!-- 左侧标签栏 -->
-      <div class="tag-menu-fixed">
-        <div
-          v-for="initial in initials"
-          :key="initial"
-          class="tag-initial"
-          :class="{ 'active-initial': activeInitial === initial }"
-          @click="toggleTagGroup(initial)"
-        >
-          {{ initial }}
-          <transition name="fade">
-            <div
-              v-if="activeInitial === initial"
-              class="tag-popover"
-            >
-              <div
-                v-for="tag in tagGroups[initial]"
-                :key="tag.tag_id"
-                class="tag-item"
-                :class="{ 'active-tag': activeTagId === tag.tag_id }"
-                @click.stop="handleTagSelect(tag.tag_id, tag.name)"
-              >
-                {{ tag.name }}
-              </div>
-            </div>
-          </transition>
+      <!-- 左侧标签导航 - 独立滚动 -->
+      <div class="tag-menu">
+        <div class="tag-header">
+          <el-icon><CollectionTag /></el-icon>
+          <span>图书分类</span>
         </div>
+        
+        <div class="tag-groups">
+          <div 
+            v-for="initial in initials" 
+            :key="initial"
+            class="tag-group"
+          >
+            <div class="group-title" @click="toggleTagGroup(initial)">
+              {{ initial }}
+              <el-icon :class="{ 'rotate-icon': activeInitial === initial }">
+                <ArrowRight />
+              </el-icon>
+            </div>
+            
+            <el-collapse-transition>
+              <div v-show="activeInitial === initial" class="tag-items">
+                <div
+                  v-for="tag in tagGroups[initial]"
+                  :key="tag.tag_id"
+                  class="tag-item"
+                  :class="{ 'active-tag': activeTagId === tag.tag_id }"
+                  @click="handleTagSelect(tag.tag_id, tag.name)"
+                >
+                  {{ tag.name }}
+                </div>
+              </div>
+            </el-collapse-transition>
+          </div>
+        </div>
+        
         <div 
-          class="tag-initial all-tags" 
-          :class="{ 'active-initial': activeTagId === 'all' }"
+          class="all-tags"
+          :class="{ 'active-tag': activeTagId === 'all' }"
           @click="handleTagSelect('all', '')"
         >
-          全部
+          <el-icon><Menu /></el-icon>
+          <span>全部书籍</span>
         </div>
       </div>
-      <!-- 中间书籍部分（确保5行4列布局不变） -->
-      <div class="home-wrapper">
-        <h2 class="home-title">
-          {{ isSearching ? `搜索结果 (${filteredBooks.length}本)` : '全部书籍' }}
-        </h2>
+      
+      <!-- 中间书籍展示区 - 独立滚动 -->
+      <div class="book-section">
+        <div class="section-header">
+          <h2>
+            <el-icon><Notebook /></el-icon>
+            {{ isSearching ? `搜索结果 (${filteredBooks.length}本)` : '精选好书推荐' }}
+          </h2>
+          <el-divider />
+        </div>
         
-        <el-row v-if="filteredBooks.length > 0" :gutter="24" class="book-list">
-          <!-- 保持4列布局（每个占6个span单位） -->
-          <el-col
-            v-for="book in pagedBooks"
-            :key="book.book_id"
-            :span="6"
-            class="book-col"
-          >
-            <el-card class="book-card" shadow="hover" @click="goBookDetail(book.book_id)">
-              <img :src="book.image_url || defaultImg" class="book-img" alt="封面" />
-              <div class="book-info">
-                <div class="book-title" :title="book.title">{{ book.title }}</div>
-                <div class="book-author">{{ book.author }}</div>
-                <div class="book-price">
-                  <span class="price">￥{{ book.price }}</span>
-                  <span class="discount" v-if="book.discount < 1">
-                    ({{ (book.discount * 10).toFixed(1) }}折)
-                  </span>
-                </div>
-                <div class="book-stock">库存：{{ book.stock }}</div>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-        
-        <!-- 无搜索结果时显示 -->
-        <el-empty v-if="isSearching && filteredBooks.length === 0" description="未找到相关书籍" />
-        <el-empty v-if="!isSearching && books.length === 0" description="暂无书籍数据" />
+        <div class="book-list-container">
+          <div v-if="filteredBooks.length > 0" class="book-list">
+            <el-row :gutter="24">
+              <el-col
+                v-for="book in pagedBooks"
+                :key="book.book_id"
+                :xs="12" :sm="8" :md="6"
+                class="book-col"
+              >
+                <el-card 
+                  class="book-card" 
+                  shadow="hover"
+                  @click="goBookDetail(book.book_id)"
+                >
+                  <div class="book-image">
+                    <el-image 
+                      :src="book.image_url || defaultImg" 
+                      fit="cover"
+                      class="book-img"
+                    />
+                    <div v-if="book.discount < 1" class="discount-badge">
+                      {{ (book.discount * 10).toFixed(1) }}折
+                    </div>
+                  </div>
+                  
+                  <div class="book-info">
+                    <!-- 书名固定高度 -->
+                    <div class="book-title" :title="book.title">
+                      {{ book.title }}
+                    </div>
+                    <!-- 作者固定位置 -->
+                    <div class="book-author">
+                      <el-icon><User /></el-icon>
+                      {{ book.author }}
+                    </div>
+                    <div class="book-meta">
+                      <!-- 价格固定位置 -->
+                      <div class="book-price">
+                        <span class="price">¥{{ book.price }}</span>
+                        <span v-if="book.original_price" class="original-price">
+                          ¥{{ book.original_price }}
+                        </span>
+                      </div>
+                      <!-- 库存固定位置 -->
+                      <div class="book-stock">
+                        <el-icon><Box /></el-icon>
+                        库存: {{ book.stock }}
+                      </div>
+                    </div>
+                  </div>
+                </el-card>
+              </el-col>
+            </el-row>
+          </div>
+          
+          <!-- 无数据提示 -->
+          <el-empty 
+            v-if="isSearching && filteredBooks.length === 0" 
+            description="未找到相关书籍"
+            :image-size="200"
+          />
+          <el-empty 
+            v-if="!isSearching && books.length === 0" 
+            description="暂无书籍数据"
+            :image-size="200"
+          />
+        </div>
         
         <!-- 分页器 -->
         <div v-if="filteredBooks.length > pageSize" class="pagination-bar">
           <el-pagination
             background
-            layout="prev, pager, next"
+            layout="prev, pager, next, jumper"
             :page-size="pageSize"
             :total="filteredBooks.length"
             v-model:current-page="currentPage"
@@ -144,37 +223,84 @@
         </div>
       </div>
       
-      <!-- 右侧论坛热门帖子区 -->
-      <el-card class="forum-posts-card">
-        <h3 class="forum-title">论坛推荐帖子</h3>
-        <el-skeleton v-if="loading" rows="5" animated />
-        <el-empty v-else-if="posts.length === 0" description="暂无帖子" />
-        <div v-else class="forum-posts-list">
-          <!-- 添加点击事件：@click="goPostDetail(post.id)" -->
-          <div 
-            v-for="post in posts" 
-            :key="post.id" 
-            class="forum-post-item"
-            @click="goPostDetail(post.post_id)"
-          >
-            <div class="post-title">{{ post.title }}</div>
-            <div class="post-content">{{ post.content }}</div>
-          </div>
+      <!-- 右侧论坛推荐区 - 独立滚动 -->
+      <div class="forum-section">
+        <div class="section-header">
+          <h3>
+            <el-icon><ChatLineRound /></el-icon>
+            热门书友讨论
+          </h3>
+          <el-button type="text" @click="goCreatePost">
+            <el-icon><Plus /></el-icon>
+            发帖
+          </el-button>
         </div>
-      </el-card>
+        
+        <el-card shadow="never" class="forum-card">
+          <el-skeleton v-if="loading" :rows="5" animated />
+          
+          <el-empty 
+            v-else-if="posts.length === 0" 
+            description="暂无帖子"
+            :image-size="100"
+          />
+          
+          <div v-else class="post-list">
+            <div 
+              v-for="post in posts" 
+              :key="post.post_id" 
+              class="post-item"
+              @click="goPostDetail(post.post_id)"
+            >
+              <div class="post-header">
+                <el-avatar :size="32" :src="post.avatar" />
+                <div class="post-author">{{ post.author }}</div>
+                <div class="post-time">{{ formatTime(post.create_time) }}</div>
+              </div>
+              
+              <div class="post-title">{{ post.title }}</div>
+              <div class="post-content">{{ post.content }}</div>
+              
+              <div class="post-footer">
+                <div class="post-stats">
+                  <span>
+                    <el-icon><View /></el-icon>
+                    {{ post.views }}
+                  </span>
+                  <span>
+                    <el-icon><ChatDotRound /></el-icon>
+                    {{ post.comments }}
+                  </span>
+                  <span>
+                    <el-icon><Star /></el-icon>
+                    {{ post.likes }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </div>
     </div>
+    
+    <!-- 登录提示弹窗 -->
     <el-dialog
       v-model="showLoginDialog"
       title="提示"
-      width="340px"
+      width="380px"
       :close-on-click-modal="false"
-      :show-close="false"
+      align-center
     >
-      <div style="text-align:center;">
-        <p style="margin-bottom:18px;">请先登录后再进行操作</p>
-        <el-button @click="goHome" style="margin-right:16px;">暂不登录</el-button>
-        <el-button type="primary" @click="goUserLogin">去登录</el-button>
+      <div class="login-dialog-content">
+        <el-icon :size="48" color="#409EFF"><WarningFilled /></el-icon>
+        <p>请先登录后再进行操作</p>
       </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="goHome">暂不登录</el-button>
+          <el-button type="primary" @click="goUserLogin">立即登录</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -183,12 +309,22 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import { 
+  ElMessage, ElLoading 
+} from 'element-plus'
+import {
+  Reading, Search, Warning, Tickets, Edit, Clock,
+  Star, ShoppingCart, SwitchButton, Back, CollectionTag,
+  ArrowRight, Menu, Notebook, User, Box, ChatLineRound,
+  Plus, View, ChatDotRound, WarningFilled
+} from '@element-plus/icons-vue'
 
 const router = useRouter()
-const username = ref('用户')
+const username = ref('书友')
+const userAvatar = ref('https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png')
+
+// 标签相关
 const tags = ref([])
-// 分组后的标签对象，如 { K: [{tag_id:1, name:'科幻'}], W: [...] }
 const tagGroups = computed(() => {
   const groups = {}
   tags.value.forEach(tag => {
@@ -199,21 +335,28 @@ const tagGroups = computed(() => {
   return groups
 })
 const initials = computed(() => Object.keys(tagGroups.value).sort())
+const activeInitial = ref('')
+const activeTagId = ref('all')
 
-// 搜索相关状态
+// 书籍相关
+const books = ref([])
+const filteredBooks = ref([])
 const searchQuery = ref('')
 const searchStatus = ref(null)
-const isSearching = ref(false) // 当前是否在搜索状态
-
-const books = ref([]) // 存储所有书籍数据
-const filteredBooks = ref([]) // 存储过滤后的书籍数据
+const isSearching = ref(false)
 const currentPage = ref(1)
-const pageSize = 20 // 5行 * 4列 = 20本/页
+const pageSize = 20
 const defaultImg = 'https://img1.baidu.com/it/u=1609036816,3547813773&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=750'
+
+// 论坛帖子
+const posts = ref([])
+const loading = ref(true)
+
+// 登录弹窗
+const showLoginDialog = ref(false)
 
 // 计算当前页显示的书籍
 const pagedBooks = computed(() => {
-  // 当数量不足一页时显示所有
   if (filteredBooks.value.length <= pageSize) {
     return filteredBooks.value
   }
@@ -221,42 +364,32 @@ const pagedBooks = computed(() => {
   return filteredBooks.value.slice(start, start + pageSize)
 })
 
-// 添加标签相关状态变量
-const activeInitial = ref('') // 当前激活的首字母
-const activeTagId = ref('all') // 当前选中的标签ID
-
 onMounted(async () => {
-  // 1. 获取所有标签
+  const loadingInstance = ElLoading.service({ 
+    target: '.book-section',
+    text: '正在加载数据...'
+  })
+  
   try {
+    // 获取标签数据
     const tagRes = await axios.get('/api/tags/')
     tags.value = tagRes.data
+    
+    // 获取书籍数据
+    const bookRes = await axios.get('/api/books/')
+    books.value = bookRes.data
+    filteredBooks.value = [...bookRes.data]
+    
+    // 获取论坛帖子
+    const postRes = await axios.get('/api/forum_posts/get_posts', { 
+      params: { limit: 5 } 
+    })
+    posts.value = postRes.data
   } catch (err) {
-    tags.value = []
-    ElMessage.error('获取标签失败')
-  }
-  
-  // 2. 获取书籍数据
-  try {
-    const res = await axios.get('/api/books/')
-    books.value = res.data
-    filteredBooks.value = res.data
-    // 重置当前页
-    currentPage.value = 1
-  } catch (err) {
-    books.value = []
-    filteredBooks.value = []
-    ElMessage.error('获取书籍列表失败')
-  }
-  
-  // 3. 加载论坛热门帖子
-  try {
-    const res = await axios.get('/api/forum_posts/get_posts', { params: { limit: 5 } })
-    posts.value = res.data
-  } catch (err) {
-    console.error('获取论坛帖子失败:', err)
-    posts.value = []
+    ElMessage.error('数据加载失败')
   } finally {
     loading.value = false
+    loadingInstance.close()
   }
 })
 
@@ -267,7 +400,6 @@ const searchBooks = async () => {
     return
   }
   
-  // 显示搜索状态
   searchStatus.value = {
     type: 'info',
     message: `正在搜索: "${searchQuery.value}"...`
@@ -275,24 +407,17 @@ const searchBooks = async () => {
   isSearching.value = true
   
   try {
-    // 发送搜索请求
     const response = await axios.post('/api/search_books', {
       query: searchQuery.value
-    }, {
-      timeout: 5000 // 设置超时时间
-    })
+    }, { timeout: 5000 })
 
-    // 处理搜索结果
     if (response.data.message === "Books found" && response.data.books) {
-      const getbooks = response.data.books
-      const foundBookIds = getbooks.map(book => Number(book.book_id))
-      
-      // 从全部书籍中过滤出匹配的书籍
+      const foundBookIds = response.data.books.map(book => Number(book.book_id))
       const foundBooks = books.value.filter(book => 
         foundBookIds.includes(Number(book.book_id))
       )
       filteredBooks.value = foundBooks
-      currentPage.value = 1 // 搜索后重置到第一页
+      currentPage.value = 1
       
       searchStatus.value = {
         type: 'success',
@@ -306,55 +431,43 @@ const searchBooks = async () => {
       }
     }
   } catch (error) {
-    console.error('搜索失败:', error)
-    let errorMessage = '搜索过程中出现错误'
-    
-    if (error.response) {
-      if (error.response.status === 400) {
-        errorMessage = error.response.data.error || '缺少搜索查询'
-      } else if (error.response.status === 500) {
-        errorMessage = '服务器内部错误'
-      }
-    } else if (error.code === 'ECONNABORTED') {
-      errorMessage = '搜索请求超时'
-    }
-    
-    ElMessage.error(errorMessage)
+    ElMessage.error('搜索失败，请稍后重试')
     searchStatus.value = {
       type: 'danger',
-      message: errorMessage
+      message: '搜索请求失败'
     }
   }
 }
 
-// 重置搜索，显示全部书籍
+// 重置搜索
 const resetSearch = () => {
   searchQuery.value = ''
   searchStatus.value = null
   isSearching.value = false
-  filteredBooks.value = [...books.value] // 恢复显示全部书籍
+  filteredBooks.value = [...books.value]
   activeTagId.value = 'all'
   currentPage.value = 1
 }
 
-// 点击标签进行筛选
+// 标签选择
 async function handleTagSelect(tagId, tagName) {
   activeTagId.value = tagId
-  activeInitial.value = '' // 选择标签后关闭弹出层
+  activeInitial.value = ''
   
-  // 如果是全部标签
   if (tagId === 'all') {
     filteredBooks.value = books.value
     return
   }
   
-  // 添加加载状态
-  loading.value = true
+  const loadingInstance = ElLoading.service({ 
+    target: '.book-section',
+    text: '正在加载分类书籍...'
+  })
+  
   try {
     const res = await axios.get(`/api/tags/${tagId}/books`)
     filteredBooks.value = res.data
     
-    // 更新页面标题显示当前标签
     if (tagName) {
       isSearching.value = true
       searchStatus.value = {
@@ -363,42 +476,34 @@ async function handleTagSelect(tagId, tagName) {
       }
     }
   } catch (err) {
-    ElMessage.error('获取标签书籍失败')
-    filteredBooks.value = []
+    ElMessage.error('获取分类书籍失败')
   } finally {
-    loading.value = false
+    loadingInstance.close()
   }
 }
 
-// 登录弹窗控制
-const showLoginDialog = ref(false)
+// 切换标签组
+function toggleTagGroup(initial) {
+  activeInitial.value = activeInitial.value === initial ? '' : initial
+}
 
-async function goBookDetail(bookId) {
+// 导航方法
+function goBookDetail(bookId) {
   try {
-    // 先记录浏览
-    await axios.post('/api/user_browse/', { book_id: bookId }, { withCredentials: true })
-    // 跳转到详情页
+    axios.post('/api/user_browse/', { book_id: bookId }, { withCredentials: true })
     router.push(`/book/${bookId}`)
   } catch (err) {
-    if (err.response && err.response.status === 401) {
+    if (err.response?.status === 401) {
       showLoginDialog.value = true
     } else {
       router.push(`/book/${bookId}`)
     }
   }
-  
 }
 
-// 切换标签组显示
-function toggleTagGroup(initial) {
-  // 如果点击的是当前已展开的首字母，则关闭
-  if (activeInitial.value === initial) {
-    activeInitial.value = ''
-  } else {
-    activeInitial.value = initial
-  }
+function goComplaint() {
+  router.push({ name: 'UserComplaint' })
 }
-// 导航方法保持不变
 
 function goCreatePost() {
   router.push({ name: 'CreatePost', query: { book_id: '' } })
@@ -431,308 +536,497 @@ function goPostDetail(postId) {
 
 async function logout() {
   try {
-    const res = await axios.post('/api/login/logout', {}, { withCredentials: true })
-    if (res.status === 200) {
-      ElMessage.success('退出登录成功')
-      router.push('/home')
-    }
+    await axios.post('/api/login/logout', {}, { withCredentials: true })
+    ElMessage.success('退出登录成功')
+    router.push('/home')
   } catch (err) {
     ElMessage.error('退出登录失败')
   }
 }
 
-// 论坛帖子相关状态
-const posts = ref([])
-const loading = ref(true)
+function goHome() {
+  showLoginDialog.value = false
+}
+
+function goUserLogin() {
+  router.push('/login')
+}
+
+// 格式化时间
+function formatTime(timeString) {
+  return new Date(timeString).toLocaleDateString()
+}
 </script>
 
 <style scoped>
-.home-wrapper {
-  flex: 1; /* 占据剩余空间 */
-  max-width: 1000px;
-  min-width: 800px;
-}
 .home-container {
   min-height: 100vh;
-  background: #f5f5f5;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
 }
+
+/* 头部样式 */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #409eff;
-  color: #fff;
-  padding: 0 40px;
-  height: 64px;
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  color: white;
+  padding: 0 30px;
+  height: 70px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  flex-shrink: 0; /* 防止头部被压缩 */
 }
-.header-actions {
+
+.logo {
   display: flex;
   align-items: center;
+  font-size: 24px;
+  font-weight: bold;
   gap: 10px;
 }
 
-/* 搜索框容器样式 */
+.logo .el-icon {
+  font-size: 28px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .search-container {
-  margin-right: 20px;
-  width: 300px;
+  width: 320px;
 }
 
-.search-container .el-input-group {
-  transition: all 0.3s ease;
+.action-buttons {
+  display: flex;
+  gap: 10px;
 }
 
-.search-container .el-input-group:hover {
-  transform: scale(1.02);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-/* 搜索状态提示 */
+.username {
+  font-size: 14px;
+}
+
+/* 搜索状态 */
 .search-status {
   display: flex;
   align-items: center;
-  margin: 10px auto;
-  padding: 8px 16px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-  max-width: 1200px;
+  justify-content: center;
+  padding: 12px 0;
+  background-color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  gap: 15px;
+  flex-shrink: 0; /* 防止搜索状态栏被压缩 */
 }
 
-.search-status .el-tag {
-  margin-right: 10px;
-}
-
-.cart-btn, .history-btn, .favorite-btn {
-  color: #fff;
-  font-size: 18px;
-}
-.username {
-  margin: 0 10px;
-}
+/* 主内容区 - 设置为弹性布局并允许滚动 */
 .main-content {
   display: flex;
-  justify-content: center; /* 居中显示 */
-  padding: 0 20px;
-}
-/* tag */
-.tag-menu-fixed {
-  width: 60px;
-  margin-right: 20px; /* 增加右边距 */
-  align-self: flex-start; /* 顶部对齐 */
-}
-.tag-initial {
-  width: 40px;
-  height: 40px;
-  line-height: 40px;
-  text-align: center;
-  margin: 4px 0;
-  background: #f5f7fa;
-  border-radius: 50%;
-  cursor: pointer;
-  font-weight: bold;
-  position: relative;
-}
-.tag-popover {
-  position: absolute;
-  left: 50px;
-  top: 0;
-  min-width: 100px;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-  z-index: 10;
-  padding: 8px 0;
-}
-.tag-item {
-  padding: 6px 18px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.tag-item:hover {
-  background: #f0f7ff;
-  color: #409eff;
-}
-/* tag */
-.search-bar {
-  margin: 0 auto 20px;
-  max-width: 500px;
-  display: block;
-}
-/* 中间书籍展示部分 - 保持布局不变 */
-.home-wrapper {
-  max-width: 1000px;
-  margin: 32px auto;
-  padding: 24px;
-  background: #fff;
-  border-radius: 10px;
-  min-height: 80vh;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  gap: 20px;
+  flex: 1;
+  width: 100%;
+  overflow: hidden; /* 隐藏外部滚动条 */
+  align-items: stretch;
+  height: calc(100vh - 110px); /* 减去头部和搜索状态栏高度 */
 }
 
-.home-title {
-  font-size: 26px;
-  font-weight: bold;
-  margin-bottom: 24px;
-  color: #409eff;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 12px;
+/* 标签导航 - 独立滚动 */
+.tag-menu {
+  width: 220px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px 0;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 高度100% */
+  overflow: hidden; /* 隐藏内部滚动条 */
+}
+
+.tag-header {
+  display: flex;
+  align-items: center;
+  padding: 0 20px 15px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 8px;
+  flex-shrink: 0; /* 防止头部被压缩 */
+}
+
+.tag-groups {
+  padding: 10px 0;
+  flex: 1; /* 占据剩余空间 */
+  overflow-y: auto; /* 添加垂直滚动条 */
+}
+
+.tag-group {
+  margin-bottom: 8px;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.group-title:hover {
+  background-color: #f8fafc;
+}
+
+.group-title .el-icon {
+  transition: transform 0.3s;
+}
+
+.rotate-icon {
+  transform: rotate(90deg);
+}
+
+.tag-items {
+  padding: 5px 0 5px 30px;
+}
+
+.tag-item {
+  padding: 8px 15px;
+  border-radius: 6px;
+  margin: 4px 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-item:hover {
+  background-color: #eff6ff;
+  color: #3b82f6;
+}
+
+.active-tag {
+  background-color: #dbeafe;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.all-tags {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  margin-top: auto; /* 推到标签区域底部 */
+  border-top: 1px solid #f1f5f9;
+  font-weight: 500;
+  cursor: pointer;
+  gap: 8px;
+  transition: all 0.3s;
+  flex-shrink: 0; /* 防止被压缩 */
+}
+
+.all-tags:hover {
+  background-color: #f8fafc;
+  color: #3b82f6;
+}
+
+/* 书籍区域 - 独立滚动 */
+.book-section {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 高度100% */
+  overflow: hidden; /* 隐藏内部滚动条 */
+}
+
+.section-header {
+  margin-bottom: 20px;
+  flex-shrink: 0; /* 防止头部被压缩 */
+}
+
+.section-header h2 {
+  display: flex;
+  align-items: center;
+  font-size: 20px;
+  color: #1e293b;
+  gap: 10px;
+}
+
+.el-divider {
+  margin: 15px 0;
+}
+
+/* 书籍列表容器 - 独立滚动 */
+.book-list-container {
+  flex: 1; /* 占据剩余空间 */
+  overflow-y: auto; /* 添加垂直滚动条 */
 }
 
 .book-list {
-  margin-bottom: 32px;
+  margin-bottom: 30px;
 }
 
 .book-col {
-  margin-bottom: 24px;
+  margin-bottom: 25px;
 }
 
-/* 书籍卡片样式 */
 .book-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-  height: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.3s;
+  height: 380px; /* 固定卡片高度 */
   display: flex;
   flex-direction: column;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  overflow: hidden;
 }
 
 .book-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.book-image {
+  position: relative;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f8fafc;
+  overflow: hidden;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .book-img {
-  width: 120px;
-  height: 180px; /* 固定高度确保对齐 */
+  width: 140px;
+  height: 180px;
   object-fit: cover;
-  margin: 15px auto 10px;
-  border-radius: 4px;
-  background: #f8f8f8;
+  transition: transform 0.3s;
 }
 
+.book-card:hover .book-img {
+  transform: scale(1.05);
+}
+
+.discount-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ef4444;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* 书籍信息区域 - 固定布局 */
 .book-info {
-  width: 100%;
-  text-align: center;
-  padding: 0 10px;
+  padding: 15px;
+  flex: 1; /* 占据剩余空间 */
+  display: flex;
+  flex-direction: column;
 }
 
+/* 书名固定高度和位置 */
 .book-title {
-  font-weight: bold;
-  font-size: 15px;
-  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 10px;
+  height: 44px; /* 固定高度 */
+  overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2; /* 限制标题为两行 */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  height: 2.6em; /* 2行高度 */
-  line-height: 1.3em;
 }
 
+/* 作者固定位置 */
 .book-author {
-  color: #666;
-  font-size: 13px;
-  margin-bottom: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 12px;
+  gap: 5px;
 }
 
+.book-meta {
+  margin-top: auto; /* 价格和库存推到信息区域底部 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 价格固定位置 */
 .book-price {
-  color: #e67e22;
-  font-size: 15px;
-  margin-bottom: 6px;
-  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .price {
+  font-size: 18px;
   font-weight: bold;
+  color: #ef4444;
 }
 
-.discount {
-  color: #67c23a;
-  margin-left: 6px;
-  font-size: 13px;
+.original-price {
+  font-size: 14px;
+  color: #94a3b8;
+  text-decoration: line-through;
 }
 
+/* 库存固定位置 */
 .book-stock {
-  color: #999;
-  font-size: 12px;
-  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #64748b;
+  gap: 5px;
 }
 
 .pagination-bar {
   display: flex;
   justify-content: center;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
-}
-/* 中间书籍展示部分 */
-
-/* 右侧推荐帖子内容 */
-.forum-posts-card {
-  width: 350px;
-  min-width: 300px;
-  margin-left: 24px;
-  padding: 16px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  height: fit-content;
-  position: sticky;
-  top: 90px;
-  align-self: flex-start; /* 顶部对齐 */
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
-.forum-title {
+/* 论坛区域 - 独立滚动 */
+.forum-section {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 高度100% */
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-shrink: 0; /* 防止头部被压缩 */
+}
+
+.section-header h3 {
+  display: flex;
+  align-items: center;
   font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 16px;
-  color: #409eff;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+  color: #1e293b;
+  gap: 8px;
 }
 
-.forum-posts-list {
-  padding: 0;
+.forum-card {
+  border-radius: 12px;
+  overflow: hidden;
+  flex: 1; /* 占据剩余空间 */
+  display: flex;
+  flex-direction: column;
 }
 
-.forum-post-item {
-  margin-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 12px;
-  transition: all 0.2s ease;
+.post-list {
+  flex: 1; /* 占据剩余空间 */
+  overflow-y: auto; /* 添加垂直滚动条 */
+  padding: 5px;
+}
+
+.post-item {
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
   cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid #f1f5f9;
 }
 
-.forum-post-item:hover {
-  background-color: #f9f9f9;
+.post-item:hover {
+  border-color: #dbeafe;
+  background-color: #f8fafc;
+  transform: translateY(-3px);
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 10px;
+}
+
+.post-author {
+  font-weight: 500;
+  flex: 1;
+}
+
+.post-time {
+  font-size: 12px;
+  color: #94a3b8;
 }
 
 .post-title {
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 5px;
+  font-weight: 600;
+  margin-bottom: 8px;
   font-size: 15px;
 }
 
 .post-content {
-  color: #666;
-  font-size: 13px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 12px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.5em;
 }
-/* 右侧推荐帖子内容 */
 
-.order-btn {
-  margin-left: 12px;
+.post-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.post-stats {
+  display: flex;
+  gap: 15px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.post-stats span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 登录弹窗 */
+.login-dialog-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.login-dialog-content p {
+  margin: 15px 0;
+  font-size: 16px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
 }
 </style>
