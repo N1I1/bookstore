@@ -1019,6 +1019,22 @@ jsonify({"error": "Internal server error"}), 500
 
 ---
 
+### 分配订单给管理员
+
+- **URL**：`POST /api/orders/assign_admin`
+- **权限**：仅管理员（需登录，`session`中有`admin_id`）
+- **说明**：为所有“已支付且未分配管理员”的订单，自动分配给当前订单数最少的管理员。
+- **请求体**：无
+- **响应**：
+  - 200 成功：`{"message": "已为N个订单分配管理员"}`
+  - 401 未授权：`{"error": "Unauthorized"}`
+  - 404 没有需要分配的订单：`{"error": "No orders to assign"}`
+  - 404 没有可用管理员：`{"error": "No available admins"}`
+
+> 后续可考虑设置每有新订单即更新或定时更新。
+
+---
+
 ### 管理员发货
 
 - **URL**：`POST /api/orders/<order_id>/ship`
@@ -1102,6 +1118,8 @@ jsonify({"error": "Internal server error"}), 500
         "cart_id": 1,
         "book_id": 1,
         "book_title": "书名",
+        "book_price": 39.9,
+        "book_image": "http://example.com/cover.jpg",
         "quantity": 2,
         "add_time": "2025-06-17T12:34:56"
       }
