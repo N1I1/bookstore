@@ -270,14 +270,14 @@ const searchBooks = async () => {
     })
 
     // 处理搜索结果
-    if (response.data.message === "Books found" && response.data.book_ids) {
-      const foundBookIds = response.data.book_ids
+    if (response.data.message === "Books found" && response.data.books) {
+      const getbooks = response.data.books
+      const foundBookIds = getbooks.map(book => Number(book.book_id))
       
       // 从全部书籍中过滤出匹配的书籍
       const foundBooks = books.value.filter(book => 
         foundBookIds.includes(Number(book.book_id))
       )
-      
       filteredBooks.value = foundBooks
       currentPage.value = 1 // 搜索后重置到第一页
       
