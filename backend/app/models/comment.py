@@ -9,7 +9,7 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id', ondelete="SET NULL"), nullable=True)
     content = db.Column(db.Text, default=None)
     comment_time = db.Column(db.DateTime, nullable=False, default=datetime.now)
-    parent_comment_id = db.Column(db.Integer, db.ForeignKey('comment.comment_id'), default=None)
+    parent_comment_id = db.Column(db.Integer, db.ForeignKey('comment.comment_id', ondelete='CASCADE'), default=None, nullable=True)
     is_deleted = db.Column(db.Boolean, default=False)
 
     # Relationships
@@ -18,5 +18,6 @@ class Comment(db.Model):
     parent_comment = db.relationship('Comment', remote_side=[comment_id], back_populates='replies')
     replies = db.relationship(
         'Comment',
-        back_populates='parent_comment'
+        back_populates='parent_comment',
+        cascade="all, delete-orphan"
     )

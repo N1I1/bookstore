@@ -1,17 +1,17 @@
-"""empty message
+"""add tables
 
-Revision ID: 9c5d58cfe8f3
-Revises: 
-Create Date: 2025-06-18 14:26:17.391046
+Revision ID: da2f07551d2a
+Revises: 09bb32e37fb5
+Create Date: 2025-06-09 10:37:22.824334
 
 """
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
-revision = '9c5d58cfe8f3'
-down_revision = None
+revision = 'da2f07551d2a'
+down_revision = '09bb32e37fb5'
 branch_labels = None
 depends_on = None
 
@@ -21,7 +21,7 @@ def upgrade():
     op.create_table('admin',
     sa.Column('admin_id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('username', sa.String(length=50), nullable=False),
-    sa.Column('password', sa.String(length=255), nullable=False),
+    sa.Column('password', sa.String(length=100), nullable=False),
     sa.Column('email', sa.String(length=100), nullable=False),
     sa.Column('phone', sa.String(length=20), nullable=False),
     sa.Column('register_time', sa.DateTime(), nullable=False),
@@ -40,20 +40,13 @@ def upgrade():
     sa.Column('discount', sa.Numeric(precision=5, scale=2), nullable=False),
     sa.Column('stock', sa.Integer(), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('image_url', sa.String(length=255), nullable=True),
     sa.PrimaryKeyConstraint('book_id'),
     sa.UniqueConstraint('isbn')
-    )
-    op.create_table('tag',
-    sa.Column('tag_id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('name', sa.String(length=50), nullable=False),
-    sa.PrimaryKeyConstraint('tag_id'),
-    sa.UniqueConstraint('name')
     )
     op.create_table('user',
     sa.Column('user_id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('username', sa.String(length=50), nullable=False),
-    sa.Column('password', sa.String(length=255), nullable=False),
+    sa.Column('password', sa.String(length=100), nullable=False),
     sa.Column('email', sa.String(length=100), nullable=False),
     sa.Column('phone', sa.String(length=20), nullable=False),
     sa.Column('register_time', sa.DateTime(), nullable=False),
@@ -62,13 +55,6 @@ def upgrade():
     sa.PrimaryKeyConstraint('user_id'),
     sa.UniqueConstraint('email'),
     sa.UniqueConstraint('username')
-    )
-    op.create_table('book_tag',
-    sa.Column('book_id', sa.Integer(), nullable=False),
-    sa.Column('tag_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ),
-    sa.ForeignKeyConstraint(['tag_id'], ['tag.tag_id'], ),
-    sa.PrimaryKeyConstraint('book_id', 'tag_id')
     )
     op.create_table('complaint',
     sa.Column('complaint_id', sa.Integer(), autoincrement=True, nullable=False),
@@ -84,11 +70,9 @@ def upgrade():
     sa.Column('post_id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('book_id', sa.Integer(), nullable=True),
-    sa.Column('title', sa.String(length=255), nullable=False),
     sa.Column('content', sa.Text(), nullable=True),
     sa.Column('post_time', sa.DateTime(), nullable=False),
     sa.Column('browse_count', sa.Integer(), nullable=False),
-    sa.Column('is_deleted', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('post_id')
@@ -96,19 +80,18 @@ def upgrade():
     op.create_table('order',
     sa.Column('order_id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('admin_id', sa.Integer(), nullable=True),
-    sa.Column('order_status', sa.Enum('未支付', '已支付', '已发货', '已完成', '订单取消', name='order_status'), nullable=False),
+    sa.Column('admin_id', sa.Integer(), nullable=False),
+    sa.Column('order_status', sa.Enum('未支付', '已支付', '已发货', '运输中', '已完成', '订单取消', name='order_status'), nullable=False),
     sa.Column('order_time', sa.DateTime(), nullable=False),
     sa.Column('payment_time', sa.DateTime(), nullable=True),
     sa.Column('ship_time', sa.DateTime(), nullable=True),
     sa.Column('get_time', sa.DateTime(), nullable=True),
-    sa.Column('ship_address', sa.String(length=255), nullable=True),
+    sa.Column('ship_address', sa.String(length=255), nullable=False),
     sa.Column('bill_address', sa.String(length=255), nullable=False),
-    sa.Column('current_address', sa.String(length=255), nullable=True),
-    sa.Column('shipper_phone', sa.String(length=20), nullable=True),
+    sa.Column('current_address', sa.String(length=255), nullable=False),
+    sa.Column('shipper_phone', sa.String(length=20), nullable=False),
     sa.Column('biller_phone', sa.String(length=20), nullable=False),
     sa.Column('remark', sa.Text(), nullable=True),
-    sa.Column('total_amount', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.ForeignKeyConstraint(['admin_id'], ['admin.admin_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('order_id')
@@ -156,7 +139,6 @@ def upgrade():
     sa.Column('content', sa.Text(), nullable=True),
     sa.Column('comment_time', sa.DateTime(), nullable=False),
     sa.Column('parent_comment_id', sa.Integer(), nullable=True),
-    sa.Column('is_deleted', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['parent_comment_id'], ['comment.comment_id'], ),
     sa.ForeignKeyConstraint(['post_id'], ['forum_post.post_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
@@ -170,8 +152,7 @@ def upgrade():
     sa.Column('unit_price', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.ForeignKeyConstraint(['book_id'], ['book.book_id'], ),
     sa.ForeignKeyConstraint(['order_id'], ['order.order_id'], ),
-    sa.PrimaryKeyConstraint('detail_id'),
-    sa.UniqueConstraint('order_id', 'book_id', name='uix_order_book')
+    sa.PrimaryKeyConstraint('detail_id')
     )
     op.create_table('post_like',
     sa.Column('like_id', sa.Integer(), autoincrement=True, nullable=False),
@@ -189,11 +170,24 @@ def upgrade():
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('agree_id')
     )
+    op.drop_table('books')
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
+    op.create_table('books',
+    sa.Column('id', mysql.INTEGER(), autoincrement=True, nullable=False),
+    sa.Column('title', mysql.VARCHAR(length=255), nullable=False),
+    sa.Column('author', mysql.VARCHAR(length=255), nullable=False),
+    sa.Column('description', mysql.TEXT(), nullable=True),
+    sa.Column('price', mysql.FLOAT(), nullable=False),
+    sa.Column('stock', mysql.INTEGER(), autoincrement=False, nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    mysql_collate='utf8mb4_0900_ai_ci',
+    mysql_default_charset='utf8mb4',
+    mysql_engine='InnoDB'
+    )
     op.drop_table('suggestion_agree')
     op.drop_table('post_like')
     op.drop_table('order_detail')
@@ -205,9 +199,7 @@ def downgrade():
     op.drop_table('order')
     op.drop_table('forum_post')
     op.drop_table('complaint')
-    op.drop_table('book_tag')
     op.drop_table('user')
-    op.drop_table('tag')
     op.drop_table('book')
     op.drop_table('admin')
     # ### end Alembic commands ###

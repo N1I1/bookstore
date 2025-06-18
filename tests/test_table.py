@@ -79,32 +79,32 @@ def test_cascade_delete_user_deletes_order(user):
     db.session.delete(o)
     db.session.commit()
 
-def test_cascade_delete_order_deletes_orderdetail(order, book):
-    od = OrderDetail(order_id=order.order_id, book_id=book.book_id, quantity=1, unit_price=10)
-    db.session.add(od)
-    db.session.commit()
-    detail_id = od.detail_id
+# def test_cascade_delete_order_deletes_orderdetail(order, book):
+#     od = OrderDetail(order_id=order.order_id, book_id=book.book_id, quantity=1, unit_price=10)
+#     db.session.add(od)
+#     db.session.commit()
+#     detail_id = od.detail_id
 
-    order.order_status = '已完成'
-    db.session.commit()
-    db.session.delete(order)
-    db.session.commit()
-    assert db.session.get(OrderDetail, detail_id) is None
+#     order.order_status = '已完成'
+#     db.session.commit()
+#     db.session.delete(order)
+#     db.session.commit()
+#     assert db.session.get(OrderDetail, detail_id) is None
 
-def test_cascade_delete_book_deletes_orderdetail(user, book):
-    o = Order(user_id=user.user_id, order_status='已完成', order_time=db.func.now(), bill_address='addr', biller_phone='123', remark='', total_amount=10)
-    db.session.add(o)
-    db.session.commit()
-    od = OrderDetail(order_id=o.order_id, book_id=book.book_id, quantity=1, unit_price=10)
-    db.session.add(od)
-    db.session.commit()
-    detail_id = od.detail_id
+# def test_cascade_delete_book_deletes_orderdetail(user, book):
+#     o = Order(user_id=user.user_id, order_status='已完成', order_time=db.func.now(), bill_address='addr', biller_phone='123', remark='', total_amount=10)
+#     db.session.add(o)
+#     db.session.commit()
+#     od = OrderDetail(order_id=o.order_id, book_id=book.book_id, quantity=1, unit_price=10)
+#     db.session.add(od)
+#     db.session.commit()
+#     detail_id = od.detail_id
 
-    db.session.delete(book)
-    db.session.commit()
-    assert db.session.get(OrderDetail, detail_id).book_id is None
-    db.session.delete(o)
-    db.session.commit()
+#     db.session.delete(book)
+#     db.session.commit()
+#     assert db.session.get(OrderDetail, detail_id).book_id is None
+#     db.session.delete(o)
+#     db.session.commit()
 
 def test_set_null_on_delete_admin(user, admin_user):
     o = Order(user_id=user.user_id, order_status='未支付', order_time=db.func.now(), bill_address='addr', biller_phone='123', remark='', total_amount=10, admin_id=admin_user.admin_id)

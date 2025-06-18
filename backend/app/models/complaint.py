@@ -8,5 +8,5 @@ class Complaint(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     complaint_time = db.Column(db.DateTime, nullable=False, default=datetime.now)
-    status = db.Column(db.Enum('待处理', '已处理', name='complaint_status'), nullable=False, default='待处理')
+    status = db.Column(db.Enum('待处理', '已受理' '已解决', name='complaint_status'), nullable=False, default='待处理')
     result = db.Column(db.Text, default=None)
