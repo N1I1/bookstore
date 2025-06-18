@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask.views import MethodView
 
-
 from app.models import Book
 from app import db
 
@@ -27,12 +26,25 @@ class BookSearchView(MethodView):
                 (Book.publisher.ilike(f"%{search_query}%"))
             ).all()
 
-            # 提取图书 ID
-            book_ids = [book.book_id for book in books]
+            # 提取图书的详细信息
+            book_info = [
+                {
+                    "book_id": book.book_id,
+                    "title": book.title,
+                    "author": book.author,
+                    "isbn": book.isbn,
+                    "publisher": book.publisher,
+                    "price": str(book.price),  # 将 Numeric 转换为字符串
+                    "discount": str(book.discount),  #  Numeric 转换为字符串
+                    "stock": book.stock,
+                    "description": book.description,
+                    "image_url": book.image_url
+                } for book in books
+            ]
 
             # 返回结果
-            if book_ids:
-                return jsonify({"message": "Books found", "book_ids": book_ids}), 200
+            if book_info:
+                return jsonify({"message": "Books found", "books": book_info}), 200
             else:
                 return jsonify({"message": "No books found"}), 404
 
@@ -40,4 +52,5 @@ class BookSearchView(MethodView):
             return jsonify({"error": str(e)}), 500
 
 # 注册视图
-book_search_bp.add_url_rule('/search_books', view_func=BookSearchView.as_view('search_books'))
+book_search_bp.add_url_rule('/', view_func=BookSearchView.as_view('search_books'))
+

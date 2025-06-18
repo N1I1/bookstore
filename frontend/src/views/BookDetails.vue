@@ -1,6 +1,6 @@
 <!-- filepath: c:\Users\22905\Desktop\database\bookstore\frontend\src\views\BookDetails.vue -->
 <template>
-  <div class="book-details-wrapper" v-if="book">
+  <div class="book-details-wrapper">
     <!-- 顶部操作栏：返回首页 + 购物车按钮 -->
     <div class="book-details-header">
       <el-button type="text" class="back-btn" @click="goHome">
@@ -15,7 +15,6 @@
       <el-button
         type="warning"
         class="post-btn"
-        style="margin-top: 12px; width: 120px;"
         @click="goCreatePost"
       >
         <el-icon><i class="el-icon-edit"></i></el-icon>
@@ -23,53 +22,89 @@
       </el-button>
     </div>
     
-    <el-card class="book-details-card">
-      <div class="book-details-main">
-        <div class="img-and-cart">
-          <img :src="book.image_url || defaultImg" class="book-img" alt="封面" />
+    <!-- 书籍详情区域 -->
+    <template v-if="book">
+      <el-card class="book-details-card">
+        <div class="book-details-main">
+          <div class="img-and-cart">
+            
+            
+            <!-- 图片下方添加加入购物车按钮 -->
+            <el-button 
+              type="success" 
+              class="add-to-cart-btn"
+              :loading="cartLoading"
+              :disabled="book && (book.stock <= 0 || cartLoading)"
+              @click="addToCart"
+            >
+              <el-icon><i class="el-icon-plus"></i></el-icon>
+              <span>加入购物车</span>
+            </el-button>
+          </div>
           
-          <!-- 图片下方添加加入购物车按钮 -->
-          <el-button 
-            type="success" 
-            class="add-to-cart-btn"
-            :loading="cartLoading"
-            :disabled="book && (book.stock <= 0 || cartLoading)"
-            @click="addToCart"
-          >
-            <el-icon><i class="el-icon-plus"></i></el-icon>
-            <span>加入购物车</span>
-          </el-button>
-        </div>
-        
-        <div class="book-info">
-          <h2 class="book-title">{{ book.title }}</h2>
-          <div class="book-author">作者：{{ book.author }}</div>
-          <div class="book-isbn">ISBN：{{ book.isbn }}</div>
-          <div class="book-publisher">出版社：{{ book.publisher }}</div>
-          <div class="book-price">
-            价格：<span class="price">￥{{ book.price }}</span>
-            <span class="discount" v-if="book.discount < 1">({{ (book.discount * 10).toFixed(1) }}折)</span>
+          <div class="book-info">
+            <h2 class="book-title">{{ book.title }}</h2>
+            <div class="book-author">作者：{{ book.author }}</div>
+            <div class="book-isbn">ISBN：{{ book.isbn }}</div>
+            <div class="book-publisher">出版社：{{ book.publisher }}</div>
+            <div class="book-price">
+              价格：<span class="price">￥{{ book.price }}</span>
+              <span class="discount" v-if="book.discount < 1">({{ (book.discount * 10).toFixed(1) }}折)</span>
+            </div>
+            <div class="book-stock">
+              库存：{{ book.stock > 0 ? book.stock : '无货' }}
+              <el-tag v-if="book.stock <= 0" type="danger" size="small" style="margin-left:8px;">售罄</el-tag>
+            </div>
+            <div class="book-desc">简介：{{ book.description || '暂无简介' }}</div>
+            <el-button
+              type="primary"
+              class="favorite-btn"
+              :loading="favLoading"
+              @click="addFavorite"
+            >
+              <el-icon><i class="el-icon-star-on"></i></el-icon>
+              收藏
+            </el-button>
           </div>
-          <div class="book-stock">
-            库存：{{ book.stock > 0 ? book.stock : '无货' }}
-            <el-tag v-if="book.stock <= 0" type="danger" size="small" style="margin-left:8px;">售罄</el-tag>
-          </div>
-          <div class="book-desc">简介：{{ book.description || '暂无简介' }}</div>
-          <el-button
-            type="primary"
-            class="favorite-btn"
-            :loading="favLoading"
-            @click="addFavorite"
-          >
-            <el-icon><i class="el-icon-star-on"></i></el-icon>
-            收藏
-          </el-button>
         </div>
-      </div>
-    </el-card>
+      </el-card>
+      
+      <!-- 相关帖子区块 -->
+      <el-card class="related-posts-card">
+        <h3 class="related-title">相关帖子</h3>
+        <el-skeleton v-if="postsLoading" rows="4" animated />
+        <el-empty v-else-if="relatedPosts.length === 0" description="暂无相关帖子" />
+        <div v-else>
+          <div
+            v-for="post in relatedPosts"
+            :key="post.post_id"
+            class="related-post-item"
+            @click="goPostDetail(post.post_id)"
+          >
+            <div class="post-header">
+              <div class="post-content-wrapper">
+                <div class="post-title">{{ post.title || 'Untitled Post' }}</div>
+                <div class="post-content">{{ post.content }}</div>
+                <div class="post-meta">
+                  <span>浏览：{{ post.browse_count }}</span>
+                  <span style="margin-left:16px;">时间：{{ formatPostTime(post.post_time) }}</span>
+                </div>
+              </div>
+              <el-button
+                v-if="isMine(post)"
+                type="danger"
+                size="small"
+                @click.stop="deletePost(post.post_id)"
+                class="delete-post-btn"
+              >删除</el-button>
+            </div>
+          </div>
+        </div>
+      </el-card>
+    </template>
+    
+    <el-empty v-else description="未找到该书籍" />
   </div>
-  
-  <el-empty v-else description="未找到该书籍" />
 </template>
 
 <script setup>
@@ -84,6 +119,9 @@ const book = ref(null)
 const defaultImg = 'https://img1.baidu.com/it/u=1609036816,3547813773&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=750'
 const favLoading = ref(false)
 const cartLoading = ref(false)
+const relatedPosts = ref([])
+const postsLoading = ref(true)
+const currentUserId = ref(null)
 
 onMounted(async () => {
   const bookId = route.params.id
@@ -91,7 +129,6 @@ onMounted(async () => {
     // 获取书籍详情
     const res = await axios.get(`/api/books/${bookId}`)
     book.value = res.data
-    
     // 记录浏览
     try {
       await axios.post('/api/user_browse/', { book_id: bookId }, { withCredentials: true })
@@ -106,7 +143,54 @@ onMounted(async () => {
       ElMessage.error('获取书籍信息失败')
     }
   }
+
+  // 获取相关帖子
+  try {
+    const res = await axios.get(`/api/forum_posts/by_book/${bookId}`)
+    relatedPosts.value = res.data
+  } catch (err) {
+    relatedPosts.value = []
+  } finally {
+    postsLoading.value = false
+  }
+  
+  // 获取当前用户ID
+  try {
+    const res = await axios.get('/api/users/', { withCredentials: true })
+    currentUserId.value = res.data.user_id
+  } catch (err) {
+    console.warn('获取用户信息失败:', err)
+  }
 })
+
+function formatPostTime(timeStr) {
+  if (!timeStr) return ''
+  return timeStr.slice(0, 16).replace('T', ' ')
+}
+
+async function deletePost(postId) {
+  try {
+    await axios.delete(`/api/forum_posts/${postId}`, { withCredentials: true })
+    ElMessage.success('帖子已删除')
+    // 刷新帖子列表
+    relatedPosts.value = relatedPosts.value.filter(p => p.post_id !== postId)
+  } catch (err) {
+    if (err.response?.status === 403) {
+      ElMessage.error('只能删除自己的帖子')
+    } else if (err.response?.status === 404) {
+      ElMessage.error('帖子不存在')
+    } else if (err.response?.status === 401) {
+      ElMessage.error('请先登录')
+      router.push('/userlogin')
+    } else {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+function isMine(post) {
+  return currentUserId.value && post.user_id == currentUserId.value
+}
 
 // 返回首页
 function goHome() {
@@ -175,8 +259,13 @@ async function addFavorite() {
     favLoading.value = false
   }
 }
+
 function goCreatePost() {
   router.push({ name: 'CreatePost', query: { book_id: book.value?.book_id || '' } })
+}
+
+function goPostDetail(postId) {
+  router.push({ name: 'PostDetail', params: { post_id: postId } })
 }
 </script>
 
@@ -214,6 +303,16 @@ function goCreatePost() {
 .cart-btn:hover {
   background-color: #e6bc5c;
   border-color: #e6bc5c;
+}
+
+.post-btn {
+  background-color: #409eff;
+  border-color: #409eff;
+}
+
+.post-btn:hover {
+  background-color: #66b1ff;
+  border-color: #66b1ff;
 }
 
 /* 书籍详情卡片 */
@@ -315,10 +414,83 @@ function goCreatePost() {
   padding: 15px;
   border-radius: 8px;
 }
+
 /* 收藏键 */
 .favorite-btn {
   margin-top: 18px;
   width: 120px;
   align-self: flex-start;
+}
+
+/* 相关帖子区域 */
+.related-posts-card {
+  margin-top: 32px;
+  padding: 24px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.related-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #409eff;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.related-post-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.related-post-item:last-child {
+  border-bottom: none;
+}
+
+.related-post-item:hover {
+  background: #f9f9f9;
+}
+
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.post-content-wrapper {
+  flex: 1;
+}
+
+.post-title {
+  font-weight: bold;
+  color: #333;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.post-content {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5em;
+}
+
+.post-meta {
+  color: #aaa;
+  font-size: 12px;
+}
+
+.delete-post-btn {
+  margin-left: 12px;
+  flex-shrink: 0;
 }
 </style>
