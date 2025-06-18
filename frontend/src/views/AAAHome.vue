@@ -1,52 +1,134 @@
-<!-- 管理员首页 -->
- <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-    <div class="w-full max-w-md">
-      <div class="text-center mb-10">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">图书管理系统</h1>
-        <p class="text-gray-600">管理员控制面板</p>
+<template>
+  <div class="admin-home">
+    <!-- 顶部栏 -->
+    <header class="admin-header">
+      <div class="admin-header-left">
+        <img src="https://cdn.jsdelivr.net/gh/element-plus/element-plus@2.3.13/docs/public/logo-small.svg" class="logo" />
+        <span class="admin-title">图书管理后台</span>
       </div>
-      
-      <div class="space-y-6">
-        <!-- 订单管理按钮 -->
-        <router-link to="/aaaordermanagement">
-          <button class="w-full flex items-center justify-center py-4 px-6 bg-blue-600 hover:bg-blue-700 rounded-lg shadow text-white font-medium text-lg transition-all duration-200 transform hover:scale-[1.02]">
-            <i class="fas fa-receipt mr-3 text-xl"></i>
-            订单管理
-          </button>
-        </router-link>
-        
-        <!-- 书籍管理按钮 -->
-        <router-link to="/aaabookmanagement">
-          <button class="w-full flex items-center justify-center py-4 px-6 bg-green-600 hover:bg-green-700 rounded-lg shadow text-white font-medium text-lg transition-all duration-200 transform hover:scale-[1.02]">
-            <i class="fas fa-book mr-3 text-xl"></i>
-            书籍管理
-          </button>
-        </router-link>
-      </div>
-      
-      <div class="mt-12 text-center text-gray-500 text-sm">
-        <p>当前登录：管理员账号</p>
-      </div>
-    </div>
+      <el-button
+        type="danger"
+        icon="el-icon-switch-button"
+        @click="logout"
+        class="logout-btn"
+      >退出登录</el-button>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="admin-main">
+      <el-card class="welcome-card">
+        <h2>欢迎来到管理员首页</h2>
+        <p>请选择下方功能进行管理操作。</p>
+        <div class="admin-btn-group">
+          <el-button
+            type="primary"
+            size="large"
+            icon="el-icon-s-order"
+            @click="goOrderManagement"
+          >订单管理</el-button>
+          <el-button
+            type="success"
+            size="large"
+            icon="el-icon-s-management"
+            @click="goBookManagement"
+          >图书管理</el-button>
+        </div>
+      </el-card>
+    </main>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'AAAHome',
-  // 组件逻辑可以在这里添加
+<script setup>
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { ElMessage } from 'element-plus'
+
+const router = useRouter()
+
+function goOrderManagement() {
+  router.push('/AAAOrderManagement' ) // 请确保路由名正确
+}
+function goBookManagement() {
+  router.push('/AAABookManagement') // 请确保路由名正确
+}
+
+async function logout() {
+  try {
+    await axios.post('/api/admin/login/logout', {}, { withCredentials: true })
+    ElMessage.success('已退出登录')
+    router.push('/AAALogin' )
+  } catch (err) {
+    ElMessage.error('退出失败')
+  }
 }
 </script>
 
 <style scoped>
-/* 添加简单的动画效果 */
-button {
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.admin-home {
+  min-height: 100vh;
+  background: #f5f7fa;
 }
-
-button:hover {
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+  background: #fff;
+  padding: 0 40px;
+  border-bottom: 1px solid #ebeef5;
+  box-shadow: 0 2px 8px #0000000a;
+}
+.admin-header-left {
+  display: flex;
+  align-items: center;
+}
+.logo {
+  height: 36px;
+  margin-right: 12px;
+}
+.admin-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #409eff;
+  letter-spacing: 2px;
+}
+.logout-btn {
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+.admin-main {
+  padding: 48px 24px;
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f5f7fa;
+}
+.welcome-card {
+  max-width: 500px;
+  width: 100%;
+  margin-top: 80px;
+  text-align: center;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px #0000000d;
+  padding: 40px 0 32px 0;
+}
+.welcome-card h2 {
+  margin-bottom: 16px;
+  color: #409eff;
+  font-size: 26px;
+  font-weight: 600;
+}
+.welcome-card p {
+  color: #666;
+  font-size: 17px;
+  margin-bottom: 24px;
+}
+.admin-btn-group {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 24px;
 }
 </style>
