@@ -967,7 +967,7 @@ jsonify({"error": "Internal server error"}), 500
 
 ---
 
-### 删除订单（仅未支付，用户可删）
+### 删除订单（仅已完成，或订单取消）
 
 - **URL**：`DELETE /api/orders/<order_id>`
 - **权限**：仅用户

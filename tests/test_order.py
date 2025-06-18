@@ -199,11 +199,32 @@ def test_update_order_user_paid_forbidden(client, login_user, test_order):
     })
     assert response.status_code == 400
 
-def test_delete_order_user(client, login_user, test_order):
+def test_delete_order_user_completed(client, login_user, test_order):
+    """用户删除已完成订单"""
     order, _ = test_order
+    order.order_status = '已完成'
+    db.session.commit()
     response = client.delete(f'/api/orders/{order.order_id}')
     assert response.status_code == 204
     assert db.session.get(Order, order.order_id) is None
+
+def test_delete_order_user_cancelled(client, login_user, test_order):
+    """用户删除已取消订单"""
+    order, _ = test_order
+    order.order_status = '订单取消'
+    db.session.commit()
+    response = client.delete(f'/api/orders/{order.order_id}')
+    assert response.status_code == 204
+    assert db.session.get(Order, order.order_id) is None
+
+def test_delete_order_user_not_allowed_status(client, login_user, test_order):
+    """用户删除非已完成或已取消订单应被禁止"""
+    order, _ = test_order
+    order.order_status = '未支付'
+    db.session.commit()
+    response = client.delete(f'/api/orders/{order.order_id}')
+    assert response.status_code == 400
+    assert b"Only complete orders can be deleted" in response.data
 
 def test_delete_order_user_paid_forbidden(client, login_user, test_order):
     order, _ = test_order
