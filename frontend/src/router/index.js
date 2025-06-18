@@ -3,6 +3,7 @@ import AAALogin from '../views/AAALogin.vue'
 import AAAHome from '../views/AAAHome.vue'
 import AAAOrderManagement from '../views/AAAOrderManagement.vue'
 import AAABookManagement from '../views/AAABookManagement.vue'
+import AAAComplaintManage from '../views/AAAComplaintManage.vue'
 import UserLogin from '../views/UserLogin.vue'
 import Register from '../views/Register.vue'
 import Home from '../views/Home.vue'
@@ -16,13 +17,14 @@ import OrderList from '../views/OrderList.vue'
 import OrderDetail from '../views/OrderDetail.vue'
 import OrderEdit from '../views/OrderEdit.vue'
 import PostDetail from '../views/PostDetail.vue'
-
+import UserComplaint from '../views/UserComplaint.vue'
 
 const routes = [
   { path: '/aaalogin', component: AAALogin },
   { path: '/aaahome', component: AAAHome },
   { path: '/aaaordermanagement', component: AAAOrderManagement },
   { path: '/aaabookmanagement', component: AAABookManagement },
+  { path: '/aaacomplaintmanage', component: AAAComplaintManage },
   { path: '/userlogin', component: UserLogin },
   { path: '/register', component: Register },
   { path: '/home', component: Home },
@@ -41,6 +43,7 @@ const routes = [
     component: () => import('../views/OrderCreate.vue')
   },
   { path: '/post/:post_id', name: 'PostDetail', component: PostDetail },
+  { path: '/user/complaint', name: 'UserComplaint', component: UserComplaint },
 ]
 
 const router = createRouter({
