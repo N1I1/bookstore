@@ -24,6 +24,8 @@ class UserCartView(MethodView):
                 "cart_id": item.cart_id,
                 "book_id": item.book_id,
                 "book_title": item.book.title if item.book else None,
+                "book_price": item.book.price if item.book else None,
+                "book_image": item.book.image_url if item.book else None,
                 "quantity": item.quantity,
                 "add_time": item.add_time.isoformat()
             })
