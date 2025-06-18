@@ -1,7 +1,7 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from flask.views import MethodView
 
-from app.models import Book, BookTag, UserBrowse, UserCart, UserFavorite
+from app.models import Book, Tag, UserBrowse, UserCart, UserFavorite
 from app import db
 from collections import Counter
 
@@ -9,10 +9,9 @@ from collections import Counter
 book_recommend_bp = Blueprint('recommend_books', __name__, url_prefix='/api/recommend_books')
 
 class BookRecommendView(MethodView):
-    def post(self):
+    def get(self):
         # 获取请求参数
-        data = request.json
-        user_id = data.get('user_id')
+        user_id = session.get('user_id', None)
 
         # 验证输入
         if not user_id:
@@ -30,13 +29,15 @@ class BookRecommendView(MethodView):
                        [favorite.book_id for favorite in recent_favorites]
 
             # Step 2: 统计作者出现次数
-            authors = [db.session.get(Book, book_id).author for book_id in book_ids]
+            authors = [Book.query.get(book_id).author for book_id in book_ids]
             most_common_author = Counter(authors).most_common(1)[0][0] if authors else None
 
             # Step 3: 统计标签出现次数
             tags = []
             for book_id in book_ids:
-                tags.extend([tag.tag for tag in BookTag.query.filter_by(book_id=book_id).all()])
+                book = Book.query.get(book_id)
+                if book:
+                    tags.extend([tag.name for tag in book.tags])
             most_common_tags = [tag for tag, _ in Counter(tags).most_common(3)] if tags else []
 
             # Step 4: 推荐书籍
@@ -44,26 +45,42 @@ class BookRecommendView(MethodView):
 
             # 推荐相同作者的书籍
             if most_common_author:
-                author_book = Book.query.filter(
+                author_books = Book.query.filter(
                     Book.author == most_common_author,
                     Book.book_id.notin_(book_ids)
-                ).first()
-                if author_book:
+                ).all()
+                for book in author_books:
                     recommendations.append({
-                        'book_id': author_book.book_id,
+                        'title': book.title,
+                        'author': book.author,
+                        'isbn': book.isbn,
+                        'publisher': book.publisher,
+                        'price': str(book.price),  # 将 Decimal 转换为字符串
+                        'discount': str(book.discount),  # 将 Decimal 转换为字符串
+                        'stock': book.stock,
+                        'description': book.description,
+                        'image_url': book.image_url,
                         'recommend_type': '作者推荐',
                         'recommend_reason': f'作者：{most_common_author}'
                     })
 
             # 推荐标签相关的书籍
             for tag in most_common_tags:
-                tag_book = Book.query.join(BookTag, Book.book_id == BookTag.book_id).filter(
-                    BookTag.tag == tag,
+                tag_books = Book.query.join(Book.tags).filter(
+                    Tag.name == tag,
                     Book.book_id.notin_(book_ids)
-                ).first()
-                if tag_book:
+                ).all()
+                for book in tag_books:
                     recommendations.append({
-                        'book_id': tag_book.book_id,
+                        'title': book.title,
+                        'author': book.author,
+                        'isbn': book.isbn,
+                        'publisher': book.publisher,
+                        'price': str(book.price),  # 将 Decimal 转换为字符串
+                        'discount': str(book.discount),  # 将 Decimal 转换为字符串
+                        'stock': book.stock,
+                        'description': book.description,
+                        'image_url': book.image_url,
                         'recommend_type': '标签推荐',
                         'recommend_reason': f'标签：{tag}'
                     })
@@ -78,4 +95,4 @@ class BookRecommendView(MethodView):
             return jsonify({"error": str(e)}), 500
 
 # 注册视图
-book_recommend_bp.add_url_rule('/', view_func=BookRecommendView.as_view('recommend_books'))
+book_recommend_bp.add_url_rule('/recommend', view_func=BookRecommendView.as_view('recommend_books'))
