@@ -3,6 +3,7 @@ from flask.views import MethodView
 from sqlalchemy.exc import IntegrityError
 
 from app.models.book import Book
+from app.models.order import Order
 from app import db
 
 book_bp = Blueprint('book', __name__, url_prefix='/api/books')
@@ -121,13 +122,35 @@ class BookView(MethodView):
         admin_id = session.get('admin_id', None)
         if not admin_id:
             return jsonify({"error": "Unauthorized"}), 401
+            
         book = db.session.get(Book, book_id)
-        if book:
+        if not book:
+            return jsonify({"error": "Book not found"}), 404
+        
+        from app.models.orderdetail import OrderDetail
+        
+        active_orders = db.session.query(Order).join(
+            OrderDetail, Order.order_id == OrderDetail.order_id
+        ).filter(
+            OrderDetail.book_id == book_id,
+            Order.order_status.not_in(['已完成', '订单取消']),
+            Order.is_deleted == False
+        ).all()
+        
+        if active_orders:
+            return jsonify({
+                "error": "该书有关联的未完成订单，不能删除",
+                "order_ids": [order.order_id for order in active_orders]
+            }), 400
+        
+        try:
             db.session.delete(book)
             db.session.commit()
             return jsonify({"message": "Book deleted"}), 204
-        else:
-            return jsonify({"error": "Book not found"}), 404
+        except Exception as e:
+            db.session.rollback()
+            print(f"删除图书出错: {str(e)}")
+            return jsonify({"error": f"删除图书失败: {str(e)}"}), 500
 
 # 将 BookView 注册到蓝图
 book_api = BookView.as_view('book_api')
