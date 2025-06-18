@@ -4,10 +4,10 @@
     <el-card class="browse-card">
       <h2>浏览记录</h2>
       <el-table :data="browseList" v-if="browseList.length" style="width: 100%">
-        <el-table-column label="书本id">
+        <el-table-column label="书名">
           <template #default="scope">
             <el-link type="primary" @click="goBookDetails(scope.row.book_id)">
-              {{ scope.row.book_id }}
+              {{ scope.row.book_title || '未知书名' }}
             </el-link>
           </template>
         </el-table-column>
