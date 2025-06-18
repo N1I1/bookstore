@@ -104,7 +104,12 @@ const submitForm = () => {
 
       if (response.status === 201) {
         ElMessage.success('帖子创建成功')
-        router.push('/home')
+        // 跳转回书籍详情页（如有 book_id）
+        if (bookId.value) {
+          router.push(`/book/${bookId.value}`)
+        } else {
+          router.push('/home')
+        }
       } else {
         ElMessage.error(response.data.Message || '创建失败')
       }
