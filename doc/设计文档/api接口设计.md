@@ -728,6 +728,27 @@ jsonify({"error": "Internal server error"}), 500
 
 ---
 
+### 获取某本书的所有标签
+
+- **URL**：`GET /api/books/<book_id>/tags`
+- **说明**：获取指定书籍关联的所有标签
+- **响应**：
+  - 200 成功，返回标签列表
+    ```json
+    [
+      {
+        "tag_id": 1,
+        "name": "科幻"
+      },
+      {
+        "tag_id": 2,
+        "name": "畅销"
+      }
+    ]
+    ```
+  - 404 书籍不存在：`{"error": "Book not found"}`
+  - 500 服务器错误：`{"error": "Book-tag relationship not defined"}`
+
 > 所有涉及书籍管理（新增、修改、删除）的接口均需管理员权限（session 中有 `admin_id`）。
 
 ---
