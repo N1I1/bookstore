@@ -157,9 +157,12 @@ def get_posts_by_book(book_id):
         'user_id': post.user_id
     } for post in posts]), 200
 
-@forum_post_bp.route('/by_user/<int:user_id>', methods=['GET'])
-def get_posts_by_user(user_id):
+@forum_post_bp.route('/by_user/', methods=['GET'])
+def get_posts_by_user():
     """根据 user_id 获取该用户的所有帖子"""
+    user_id = session.get('user_id', None)
+    if not user_id:
+        return jsonify({"error": "User not logged in"}), 401
     posts = ForumPost.query.filter_by(user_id=user_id, is_deleted=False).all()
     if not posts:
         return jsonify({"error": "No posts found for this user"}), 404
