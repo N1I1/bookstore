@@ -1,5 +1,14 @@
 <template>
   <div class="complaint-page">
+    <el-row style="margin-bottom: 16px;">
+      <el-col :span="24">
+        <el-button
+          type="primary"
+          icon="el-icon-arrow-left"
+          @click="goUserHome"
+        >返回主页</el-button>
+      </el-col>
+    </el-row>
     <el-card>
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
@@ -46,6 +55,19 @@
       </template>
     </el-dialog>
   </div>
+  <el-dialog
+    v-model="showLoginDialog"
+    title="提示"
+    width="340px"
+    :close-on-click-modal="false"
+    :show-close="false"
+  >
+    <div style="text-align:center;">
+      <p style="margin-bottom:18px;">请先登录后再进行操作</p>
+      <el-button @click="goUserHome" style="margin-right:16px;">暂不登录</el-button>
+      <el-button type="primary" @click="goUserLogin">去登录</el-button>
+    </div>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -62,6 +84,20 @@ const newComplaint = ref('')
 const createLoading = ref(false)
 const router = useRouter()
 
+// 登录弹窗控制
+const showLoginDialog = ref(false)
+function handleLoginRequired() {
+  showLoginDialog.value = true
+}
+function goUserHome() {
+  showLoginDialog.value = false
+  router.push('/home')
+}
+function goUserLogin() {
+  showLoginDialog.value = false
+  router.push('/userlogin')
+}
+
 onMounted(fetchComplaints)
 
 async function fetchComplaints() {
@@ -77,7 +113,7 @@ async function fetchComplaints() {
   } catch (err) {
     if (err.response?.status === 401) {
       ElMessage.warning('请先登录')
-      router.push({ name: 'UserLogin' })
+      handleLoginRequired()
     } else if (err.response?.status === 404) {
       complaints.value = []
     } else {
@@ -105,7 +141,7 @@ async function createComplaint() {
   } catch (err) {
     if (err.response?.status === 401) {
       ElMessage.warning('请先登录')
-      router.push({ name: 'UserLogin' })
+      handleLoginRequired()
     } else {
       ElMessage.error(err.response?.data?.error || '提交失败')
     }
@@ -124,7 +160,7 @@ async function markResolved(complaint_id) {
   } catch (err) {
     if (err.response?.status === 401) {
       ElMessage.warning('请先登录')
-      router.push({ name: 'UserLogin' })
+      handleLoginRequired()
     } else {
       ElMessage.error(err.response?.data?.error || '操作失败')
     }

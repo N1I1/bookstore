@@ -61,6 +61,12 @@
           @click="cancelOrder"
           :loading="cancelLoading"
         >取消订单</el-button>
+        <el-button
+          v-if="order.order_status === '已发货'"
+          type="success"
+          @click="confirmOrder"
+          :loading="confirmLoading"
+        >确认收货</el-button>
       </div>
     </el-card>
   </div>
@@ -85,6 +91,7 @@ const editForm = ref({
 const editLoading = ref(false)
 const payLoading = ref(false)
 const cancelLoading = ref(false)
+const confirmLoading = ref(false)
 
 onMounted(fetchOrder)
 
@@ -224,6 +231,33 @@ async function cancelOrder() {
     }
   } finally {
     cancelLoading.value = false
+  }
+}
+
+async function confirmOrder() {
+  confirmLoading.value = true
+  try {
+    await axios.post(`/api/orders/${order.value.order_id}/confirm`, {}, {
+      withCredentials: true
+    })
+    ElMessage.success('确认收货成功')
+    await fetchOrder()
+  } catch (err) {
+    if (err.response?.status === 400) {
+      ElMessage.error('订单状态不允许确认收货')
+    } else if (err.response?.status === 401) {
+      ElMessage.error('请先登录')
+      router.push('/userlogin')
+    } else if (err.response?.status === 403) {
+      ElMessage.error('无权操作此订单')
+    } else if (err.response?.status === 404) {
+      ElMessage.error('订单不存在')
+      router.push({ name: 'OrderList' })
+    } else {
+      ElMessage.error('确认收货失败')
+    }
+  } finally {
+    confirmLoading.value = false
   }
 }
 </script>
