@@ -19,14 +19,14 @@ class OrderView(MethodView):
 
         if order_id is None:
             # 查询订单列表
-            if admin_id and user_id:
+            if not admin_id and not user_id:
+                return jsonify({"error": "Unauthorized"}), 401
+            elif admin_id and user_id:
                 orders = Order.query.filter_by(admin_id=admin_id, user_id=user_id, is_deleted=False).all()
             elif admin_id:
                 orders = Order.query.filter_by(admin_id=admin_id).all()
             elif user_id:
                 orders = Order.query.filter_by(user_id=user_id, is_deleted=False).all()
-            else:
-                return jsonify({"error": "Unauthorized"}), 401
             return jsonify([
                 {
                     "order_id": o.order_id,
