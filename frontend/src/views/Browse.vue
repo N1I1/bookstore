@@ -15,7 +15,7 @@
       
       <div class="content-wrapper">
         <el-table :data="browseList" v-if="browseList.length" style="width: 100%" class="custom-table">
-          <el-table-column label="书籍信息" min-width="300">
+          <el-table-column label="书名" min-width="300">
             <template #default="scope">
               <div class="book-info" @click="goBookDetails(scope.row.book_id)">
                 <div class="book-title">
@@ -60,6 +60,19 @@
       </div>
     </el-card>
   </div>
+  <el-dialog
+    v-model="showLoginDialog"
+    title="提示"
+    width="340px"
+    :close-on-click-modal="false"
+    :show-close="false"
+  >
+    <div style="text-align:center;">
+      <p style="margin-bottom:18px;">请先登录后再进行操作</p>
+      <el-button @click="goUserHome" style="margin-right:16px;">暂不登录</el-button>
+      <el-button type="primary" @click="goUserLogin">去登录</el-button>
+    </div>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -72,6 +85,21 @@ const router = useRouter()
 const browseList = ref([])
 const defaultCover = "https://via.placeholder.com/60x80?text=No+Cover"
 
+// 登录弹窗控制
+const showLoginDialog = ref(false)
+function handleLoginRequired() {
+  showLoginDialog.value = true
+}
+function goUserHome() {
+  showLoginDialog.value = false
+  router.push('/home')
+}
+function goUserLogin() {
+  showLoginDialog.value = false
+  router.push('/userlogin')
+}
+// 登录弹窗控制
+
 onMounted(async () => {
   try {
     const res = await axios.get('/api/user_browse/user/', { withCredentials: true })
@@ -80,7 +108,7 @@ onMounted(async () => {
     browseList.value = []
     if (err.response && err.response.status === 401) {
       ElMessage.warning('请先登录')
-      router.push('/login')
+      handleLoginRequired()
     } else {
       ElMessage.error('获取浏览记录失败')
     }
@@ -98,7 +126,7 @@ async function deleteBrowse(browseId) {
       ElMessage.warning('记录不存在')
     } else if (err.response && err.response.status === 401) {
       ElMessage.warning('请先登录')
-      router.push('/login')
+      handleLoginRequired()
     } else {
       ElMessage.error('删除失败')
     }

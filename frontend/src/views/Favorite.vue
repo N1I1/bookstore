@@ -61,6 +61,19 @@
       </el-table>
     </el-card>
   </div>
+  <el-dialog
+    v-model="showLoginDialog"
+    title="提示"
+    width="340px"
+    :close-on-click-modal="false"
+    :show-close="false"
+  >
+    <div style="text-align:center;">
+      <p style="margin-bottom:18px;">请先登录后再进行操作</p>
+      <el-button @click="goUserHome" style="margin-right:16px;">暂不登录</el-button>
+      <el-button type="primary" @click="goUserLogin">去登录</el-button>
+    </div>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -73,6 +86,21 @@ const favorites = ref([])
 const loading = ref(true)
 const removingId = ref(null)
 const router = useRouter()
+
+// 登录弹窗控制
+const showLoginDialog = ref(false)
+function handleLoginRequired() {
+  showLoginDialog.value = true
+}
+function goUserHome() {
+  showLoginDialog.value = false
+  router.push('/home')
+}
+function goUserLogin() {
+  showLoginDialog.value = false
+  router.push('/userlogin')
+}
+// 登录弹窗控制
 
 onMounted(async () => {
   await fetchFavorites()
@@ -87,6 +115,7 @@ async function fetchFavorites() {
     favorites.value = []
     if (err.response && err.response.status === 401) {
       ElMessage.warning('请先登录')
+      handleLoginRequired()
     } else {
       ElMessage.error('获取收藏失败')
     }
@@ -106,6 +135,7 @@ async function removeFavorite(bookId) {
       ElMessage.warning('收藏记录不存在')
     } else if (err.response && err.response.status === 401) {
       ElMessage.warning('请先登录')
+      handleLoginRequired()
     } else {
       ElMessage.error('取消收藏失败')
     }
