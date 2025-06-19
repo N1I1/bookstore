@@ -441,7 +441,7 @@ onMounted(async () => {
     })
     posts.value = postRes.data
   } catch (err) {
-    ElMessage.error('数据加载失败')
+    // ElMessage.error('数据加载失败')
   } finally {
     loading.value = false
     loadingInstance.close()
