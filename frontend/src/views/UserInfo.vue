@@ -90,7 +90,12 @@ onMounted(async () => {
     if (res.status === 200) {
       Object.assign(user.value, res.data)
       // 确保user_id存在
-        fetchUserPosts()
+      if (res.data.user_id) {
+        console.log('获取用户帖子，用户ID:', res.data.user_id)
+        fetchUserPosts(res.data.user_id)
+      } else {
+        postsLoading.value = false
+        console.error('用户信息中缺少user_id字段')
       }
     }
   } catch (err) {
@@ -107,10 +112,10 @@ onMounted(async () => {
   }
 })
 
-async function fetchUserPosts() {
+async function fetchUserPosts(userId) {
   postsLoading.value = true
   try {
-    const res = await axios.get(`/api/forum_posts/by_user/`, {
+    const res = await axios.get(`/api/forum_posts/by_user/${userId}`, {
       withCredentials: true
     })
     console.log('用户帖子响应:', res.data) // 调试日志

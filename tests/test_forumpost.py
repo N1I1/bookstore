@@ -254,12 +254,10 @@ def test_get_posts_by_user(client, login_user, test_user, test_book):
     db.session.add_all([post1, post2])
     db.session.commit()
 
-    # 只获取当前登录用户的帖子
-    response = client.get(f'/api/forum_posts/by_user/')
+    response = client.get(f'/api/forum_posts/by_user/{test_user.user_id}')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
-    # 只包含当前用户的帖子
     titles = [post['title'] for post in data]
     assert 'User Post 1' in titles
     assert 'User Post 2' in titles
@@ -270,6 +268,6 @@ def test_get_posts_by_user(client, login_user, test_user, test_book):
     db.session.commit()
 
 def test_get_posts_by_user_no_posts(client, login_user, another_user):
-    response = client.get(f'/api/forum_posts/by_user/')
+    response = client.get(f'/api/forum_posts/by_user/{another_user.user_id}')
     assert response.status_code == 404
     assert b"No posts found for this user" in response.data
