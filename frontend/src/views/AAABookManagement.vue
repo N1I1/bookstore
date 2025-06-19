@@ -183,7 +183,7 @@ import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 function goAdminHome() {
-  router.push('/AAAHome') // 请确保路由名为 AdminHome
+  router.push('/AAAHome') // 请确保路由名为 AAAHome
 }
 
 /* 标签管理相关 */

@@ -28,7 +28,8 @@
           >取消</el-button>
         </template>
         <template v-else>
-          {{ comment.content }}
+          <span v-if="!comment.content || comment.content.trim() === ''" style="color:#bbb;">该评论已删除</span>
+          <span v-else>{{ comment.content }}</span>
         </template>
       </div>
       <div class="comment-actions">
