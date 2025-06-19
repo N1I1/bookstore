@@ -23,6 +23,6 @@ class Config:
     MAIL_USE_SSL = True
     # MAIL_USE_TLS = True
     MAIL_USERNAME = '2148741639@qq.com'
-    MAIL_PASSWORD = '021226cxy'
+    MAIL_PASSWORD = ''
     MAIL_DEFAULT_SENDER = '2148741639@qq.com'
     
