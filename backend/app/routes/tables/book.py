@@ -157,3 +157,17 @@ book_api = BookView.as_view('book_api')
 book_bp.add_url_rule('/', view_func=book_api, methods=['GET'], defaults={'book_id': None})
 book_bp.add_url_rule('/', view_func=book_api, methods=['POST'])
 book_bp.add_url_rule('/<int:book_id>', view_func=book_api, methods=['GET', 'PUT', 'DELETE'])
+
+@book_bp.route('/<int:book_id>/tags', methods=['GET'])
+def get_tags_by_book(book_id):
+    book = db.session.get(Book, book_id)
+    if not book:
+        return jsonify({"error": "Book not found"}), 404
+    # 假设 Book 有 tags 关系
+    tags = getattr(book, 'tags', None)
+    if tags is None:
+        return jsonify({"error": "Book-tag relationship not defined"}), 500
+    return jsonify([
+        {"tag_id": tag.tag_id, "name": tag.name}
+        for tag in tags
+    ]), 200
