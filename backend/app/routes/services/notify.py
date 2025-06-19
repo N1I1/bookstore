@@ -67,25 +67,28 @@ def notify_new_book():
     请求体: { "book_id": 123 }
     """
     data = request.json
-    book_id = data.get('book_id')
-    if not book_id:
+    book_ids = data.get('book_ids')
+    if not book_ids:
         return jsonify({"error": "Missing book_id"}), 400
-
-    book = db.session.get(Book, book_id)
     
-    if not book:
-        return jsonify({"error": "Book not found"}), 404
+    count = 0
+    for book_id in book_ids:
 
-    # 这里筛选用户
-    filter_results = filter_users_by_interests(book_id)
-
-    if not filter_results:
-        return jsonify({"error": "There are no eligible users"}), 404
+        book = db.session.get(Book, book_id)
     
-    book_title = book.title
-    count = send_email(book_title, filter_results)
+        if not book:
+            return jsonify({"error": "Book not found"}), 404
+
+        # 这里筛选用户
+        filter_results = filter_users_by_interests(book_id)
+
+        if not filter_results:
+            return jsonify({"error": "There are no eligible users"}), 404
+        
+        book_title = book.title
+        count = count + send_email(book_title, filter_results)
     # print(filter_results)
-    return jsonify({"message": f"检测目标用户{len(filter_results)}位，已向{count}位用户发送新书通知"}), 200
+    return jsonify({"message": f"检测目标用户 {len(filter_results)} 位，已向发送 {count} 条新书通知"}), 200
 
 
 def filter_users_by_interests(book_id):

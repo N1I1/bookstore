@@ -101,14 +101,8 @@
     </el-row>
     <!-- 推荐结果弹窗 -->
     <el-dialog v-model="showRecommendDialog" title="推荐结果" width="700px">
-      <el-table :data="recommendList" v-if="recommendList.length">
-        <el-table-column prop="title" label="书名" />
-        <el-table-column prop="author" label="作者" />
-        <el-table-column prop="publisher" label="出版社" />
-        <el-table-column prop="recommend_type" label="推荐类型" />
-        <el-table-column prop="recommend_reason" label="推荐理由" />
-      </el-table>
-      <el-empty v-else description="暂无推荐结果" />
+      <el-empty v-if="recommendList.length === 0" description="暂无推荐结果" />
+      <el-empty v-else :description="recommendList.value" />
       <template #footer>
         <el-button @click="showRecommendDialog = false">关闭</el-button>
       </template>

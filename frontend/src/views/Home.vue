@@ -303,6 +303,27 @@
       </template>
     </el-dialog>
   </div>
+  <el-dialog
+    v-model="showRecommendDialog"
+    title="为你推荐的书籍"
+    width="700px"
+    @close="handleDialogClose"
+  >
+    <el-table :data="recommendList" v-if="recommendList.length">
+      <el-table-column prop="title" label="书名" />
+      <el-table-column prop="author" label="作者" />
+      <el-table-column prop="publisher" label="出版社" />
+      <el-table-column prop="recommend_type" label="推荐类型" />
+      <el-table-column prop="recommend_reason" label="推荐理由" />
+    </el-table>
+    <el-empty v-else description="暂无推荐结果" />
+    <template #footer>
+      <el-checkbox v-model="dontShowAgain" style="margin-right:16px;">
+        15分钟内不再弹出
+      </el-checkbox>
+      <el-button @click="handleDialogClose">关闭</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -352,8 +373,42 @@ const defaultImg = 'https://img1.baidu.com/it/u=1609036816,3547813773&fm=253&fmt
 const posts = ref([])
 const loading = ref(true)
 
+// 推荐书籍弹窗
+const showRecommendDialog = ref(false)
+const recommendList = ref([])
+const dontShowAgain = ref(false)
+
 // 登录弹窗
 const showLoginDialog = ref(false)
+
+// 推荐书籍
+function fetchRecommendBooks() {
+  axios.get('/api/recommend_books/recommend', { withCredentials: true })
+    .then(res => {
+      if (res.data && res.data.recommendations && res.data.recommendations.length > 0) {
+        recommendList.value = res.data.recommendations
+        showRecommendDialog.value = true
+      } else {
+        recommendList.value = []
+      }
+    })
+    .catch(err => {
+      if (err.response?.status === 400) {
+        ElMessage.error('缺少用户ID')
+      } else if (err.response?.status === 404) {
+        ElMessage.warning('没有推荐书籍')
+      } else {
+        ElMessage.error('推荐失败')
+      }
+    })
+}
+
+function handleDialogClose() {
+  if (dontShowAgain.value) {
+    localStorage.setItem('recommendDialogHideUntil', Date.now() + 3 * 60 * 1000)
+  }
+  showRecommendDialog.value = false
+}
 
 // 计算当前页显示的书籍
 const pagedBooks = computed(() => {
@@ -391,6 +446,9 @@ onMounted(async () => {
     loading.value = false
     loadingInstance.close()
   }
+  const hideUntil = Number(localStorage.getItem('recommendDialogHideUntil') || 0)
+  if (Date.now() < hideUntil) return
+  fetchRecommendBooks()
 })
 
 // 搜索书籍
@@ -838,9 +896,10 @@ function formatTime(timeString) {
 /* 书籍信息区域 - 固定布局 */
 .book-info {
   padding: 15px;
-  flex: 1; /* 占据剩余空间 */
+  flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 120px; /* 可根据实际调整 */
 }
 
 /* 书名固定高度和位置 */
@@ -848,7 +907,7 @@ function formatTime(timeString) {
   font-weight: 600;
   font-size: 16px;
   margin-bottom: 10px;
-  height: 44px; /* 固定高度 */
+  height: 44px; /* 2行高度 */
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -857,12 +916,18 @@ function formatTime(timeString) {
 
 /* 作者固定位置 */
 .book-author {
-  display: flex;
-  align-items: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;      /* 最多2行 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: #64748b;
   font-size: 14px;
   margin-bottom: 12px;
+  height: 40px;                /* 2行高度，按实际字体大小调整 */
+  word-break: break-all;
   gap: 5px;
+  align-items: flex-start;
 }
 
 .book-meta {
@@ -872,11 +937,15 @@ function formatTime(timeString) {
   align-items: center;
 }
 
-/* 价格固定位置 */
+/* 价格位置 */
 .book-price {
   display: flex;
   align-items: center;
   gap: 8px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .price {
@@ -891,13 +960,17 @@ function formatTime(timeString) {
   text-decoration: line-through;
 }
 
-/* 库存固定位置 */
+/* 库存位置 */
 .book-stock {
   display: flex;
   align-items: center;
   font-size: 14px;
   color: #64748b;
   gap: 5px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pagination-bar {
