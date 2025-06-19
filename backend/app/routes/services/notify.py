@@ -88,7 +88,7 @@ def notify_new_book():
         book_title = book.title
         count = count + send_email(book_title, filter_results)
     # print(filter_results)
-    return jsonify({"message": f"检测目标用户{len(filter_results)}位，已向{count}位用户发送新书通知"}), 200
+    return jsonify({"message": f"检测目标用户 {len(filter_results)} 位，已向发送 {count} 条新书通知"}), 200
 
 
 def filter_users_by_interests(book_id):
