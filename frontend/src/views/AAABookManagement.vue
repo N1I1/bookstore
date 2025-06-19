@@ -54,9 +54,26 @@
       <!-- 书籍管理区 -->
       <el-col :span="18">
         <el-card>
-          <div class="section-title">书籍管理</div>
+          <div class="section-title-bar">
+            <span class="section-title">书籍管理</span>
+            <el-button
+              type="success"
+              icon="el-icon-star-on"
+              class="recommend-btn"
+              @click="notifyNewBooks"
+              :disabled="selectedBookIds.length === 0"
+            >推荐图书</el-button>
+          </div>
           <el-button type="primary" @click="showCreateBookDialog = true" style="margin-bottom:16px;">创建新书籍</el-button>
-          <el-table :data="pagedBooks" style="width:100%;" v-loading="bookLoading">
+          <el-table
+            :data="pagedBooks"
+            :row-key="row => row.book_id"
+            style="width:100%;"
+            v-loading="bookLoading"
+            @selection-change="handleSelectionChange"
+            ref="bookTable"
+          >
+            <el-table-column type="selection" width="50" />
             <el-table-column prop="book_id" label="ID" width="60" />
             <el-table-column prop="title" label="书名" />
             <el-table-column prop="author" label="作者" width="120" />
@@ -82,6 +99,20 @@
         </el-card>
       </el-col>
     </el-row>
+    <!-- 推荐结果弹窗 -->
+    <el-dialog v-model="showRecommendDialog" title="推荐结果" width="700px">
+      <el-table :data="recommendList" v-if="recommendList.length">
+        <el-table-column prop="title" label="书名" />
+        <el-table-column prop="author" label="作者" />
+        <el-table-column prop="publisher" label="出版社" />
+        <el-table-column prop="recommend_type" label="推荐类型" />
+        <el-table-column prop="recommend_reason" label="推荐理由" />
+      </el-table>
+      <el-empty v-else description="暂无推荐结果" />
+      <template #footer>
+        <el-button @click="showRecommendDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 创建书籍弹窗 -->
     <el-dialog v-model="showCreateBookDialog" title="创建新书籍" width="500px">
@@ -176,7 +207,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
@@ -206,7 +237,7 @@ const pagedTags = computed(() => {
 const allBooks = ref([])
 const bookLoading = ref(false)
 const bookPage = ref(1)
-const bookPageSize = 25
+const bookPageSize = ref(25)
 const showCreateBookDialog = ref(false)
 const showBookDetailDialog = ref(false)
 const bookFormRef = ref(null)
@@ -222,8 +253,8 @@ const bookDetail = reactive({
 const selectedTagId = ref(null)
 
 const pagedBooks = computed(() => {
-  const start = (bookPage.value - 1) * bookPageSize
-  return allBooks.value.slice(start, start + bookPageSize)
+  const start = (bookPage.value - 1) * bookPageSize.value
+  return allBooks.value.slice(start, start + bookPageSize.value)
 })
 
 /* 书籍表单校验 */
@@ -394,21 +425,80 @@ onMounted(() => {
   fetchAllTags()
   fetchAllBooks()
 })
+
+/* 多选相关，分页记忆 */
+const selectedBookIds = ref([])
+const bookTable = ref(null)
+function handleSelectionChange(selection) {
+  const currentPageIds = pagedBooks.value.map(b => b.book_id)
+  // 先移除当前页的所有id
+  selectedBookIds.value = selectedBookIds.value.filter(id => !currentPageIds.includes(id))
+  // 再合并新选中的id，并去重
+  const newIds = selection.map(item => item.book_id)
+  selectedBookIds.value = Array.from(new Set([...selectedBookIds.value, ...newIds]))
+}
+
+// 分页切换时同步高亮
+function syncSelection() {
+  nextTick(() => {
+    if (!bookTable.value) return
+    bookTable.value.clearSelection()
+    pagedBooks.value.forEach(row => {
+      // 类型一致很重要
+      if (selectedBookIds.value.includes(row.book_id)) {
+        bookTable.value.toggleRowSelection(row, true)
+      }
+    })
+  })
+}
+watch(pagedBooks, syncSelection, { immediate: true })
+
+/* 推荐图书功能 */
+const showRecommendDialog = ref(false)
+const recommendList = ref([])
+
+async function notifyNewBooks() {
+  if (selectedBookIds.value.length === 0) {
+    ElMessage.warning('请先勾选要推荐的图书')
+    return
+  }
+  try {
+    // 传递book_ids给后端
+    const res = await axios.post('/api/notify/new_book', { book_ids: selectedBookIds.value }, { withCredentials: true })
+    if (res.data && res.data.recommendations && res.data.recommendations.length > 0) {
+      recommendList.value = res.data.recommendations
+      ElMessage.success('推荐成功')
+    } else {
+      recommendList.value = []
+      ElMessage.info('暂无推荐结果')
+    }
+    showRecommendDialog.value = true
+    // 可选：清空选择
+    // selectedBookIds.value = []
+  } catch (err) {
+    ElMessage.error(err.response?.data?.error || '推荐失败')
+    recommendList.value = []
+    showRecommendDialog.value = true
+  }
+}
 </script>
 
 <style scoped>
-.admin-book-management {
-  padding: 32px 24px;
+.back-admin-btn {
+  margin-bottom: 12px;
+}
+.section-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 .section-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
   color: #409eff;
-  margin-bottom: 18px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 8px;
 }
-.back-admin-btn {
-  margin-bottom: 16px;
+.recommend-btn {
+  margin-left: auto;
 }
 </style>
