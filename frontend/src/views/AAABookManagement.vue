@@ -459,16 +459,8 @@ async function notifyNewBooks() {
   try {
     // 传递book_ids给后端
     const res = await axios.post('/api/notify/new_book', { book_ids: selectedBookIds.value }, { withCredentials: true })
-    if (res.data && res.data.recommendations && res.data.recommendations.length > 0) {
-      recommendList.value = res.data.recommendations
-      ElMessage.success('推荐成功')
-    } else {
-      recommendList.value = []
-      ElMessage.info('暂无推荐结果')
-    }
-    showRecommendDialog.value = true
-    // 可选：清空选择
-    // selectedBookIds.value = []
+    ElMessage.success(res.data.message || '推荐成功')
+    showRecommendDialog.value = false
   } catch (err) {
     ElMessage.error(err.response?.data?.error || '推荐失败')
     recommendList.value = []
