@@ -51,7 +51,6 @@ def create_app():
     from app.routes.auth.register import register_bp
     from app.routes.auth.login import login_bp
     from app.routes.auth.admin_login import admin_login_bp
-    from app.routes.services.notify import notify_bp
     from app.routes.tables.book import book_bp
     from app.routes.tables.booktag import booktag_bp
     from app.routes.tables.comment import comment_bp
@@ -64,7 +63,6 @@ def create_app():
     app.register_blueprint(register_bp)
     app.register_blueprint(login_bp)
     app.register_blueprint(admin_login_bp)
-    app.register_blueprint(notify_bp)
     app.register_blueprint(book_bp)
     app.register_blueprint(forum_post_bp)
     app.register_blueprint(comment_bp)
@@ -102,5 +100,11 @@ def create_app():
     app.register_blueprint(book_search_bp)
     app.register_blueprint(book_recommend_bp)
     app.register_blueprint(complaint_manage_bp)
+
+    # register servie
+
+    from app.routes.services.notify import notify_bp
+
+    app.register_blueprint(notify_bp)
     
     return app
