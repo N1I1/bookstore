@@ -1,13 +1,18 @@
 <template>
   <div class="post-detail-page">
     <el-row align="middle" class="header-row">
-      <el-col :span="24">
+      <el-col :span="24" style="display: flex; align-items: center; justify-content: space-between;">
         <el-button
           type="primary"
           icon="el-icon-arrow-left"
           class="back-btn"
           @click="goBack"
         >返回</el-button>
+        <el-button
+          type="danger"
+          icon="el-icon-delete"
+          @click="deletePost"
+        >删除帖子</el-button>
       </el-col>
     </el-row>
     <el-card class="post-main-card" v-if="post">
@@ -60,7 +65,6 @@
           @refresh="fetchComments"
           @delete-comment="deleteComment"
         />
-        
         <el-empty v-else description="暂无评论" />
       </div>
     </el-card>
@@ -156,6 +160,26 @@ async function deleteComment(commentId) {
       ElMessage.error('只能删除自己的评论')
     } else if (err.response && err.response.status === 404) {
       ElMessage.error('评论不存在')
+    } else {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+async function deletePost() {
+  try {
+    await axios.delete(`/api/forum_posts/${post.value.post_id}`, { withCredentials: true })
+    ElMessage.success('帖子已删除')
+    router.push('/home')
+  } catch (err) {
+    if (err.response?.status === 401) {
+      ElMessage.error('请先登录')
+      router.push('/userlogin')
+    } else if (err.response?.status === 403) {
+      ElMessage.error('只能删除自己的帖子')
+    } else if (err.response?.status === 404) {
+      ElMessage.error('帖子不存在')
+      router.push('/home')
     } else {
       ElMessage.error('删除失败')
     }
