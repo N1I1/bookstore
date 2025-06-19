@@ -22,7 +22,7 @@ class Config:
     MAIL_PORT = 465
     MAIL_USE_SSL = True
     # MAIL_USE_TLS = True
-    MAIL_USERNAME = '**@qq.com'
-    MAIL_PASSWORD = '**'
-    MAIL_DEFAULT_SENDER = '**@qq.com'
+    MAIL_USERNAME = '2148741639@qq.com'
+    MAIL_PASSWORD = ''
+    MAIL_DEFAULT_SENDER = '2148741639@qq.com'
     
