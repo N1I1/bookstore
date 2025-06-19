@@ -20,6 +20,7 @@ class UserView(MethodView):
         user = db.session.get(User, user_id)
         if user:
             return jsonify({
+                "user_id": user.user_id,
                 "username": user.username,
                 "email": user.email,
                 "phone": user.phone,
