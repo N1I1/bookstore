@@ -117,18 +117,23 @@ class ComplaintAPI(MethodView):
             if status:
                 query = query.filter_by(status=status)
             complaints = query.all()
-
-            complaint_info = [
-                {
+            
+            complaint_info = []
+            for complaint in complaints:
+                if complaint.user_id:
+                    user = db.session.get(User, complaint.user_id)
+                    username = user.username
+                else:
+                    username = ""
+                complaint_info.append({
                     "complaint_id": complaint.complaint_id,
                     "user_id": complaint.user_id,
-                    "username": db.session.get(User, complaint.user_id).username,
+                    "username": username,
                     "content": complaint.content,
                     "complaint_time": complaint.complaint_time.strftime("%Y-%m-%d %H:%M:%S"),
                     "status": complaint.status,
                     "result": complaint.result
-                } for complaint in complaints
-            ]
+                    })
 
             if complaint_info:
                 return jsonify({"message": "Complaints found", "complaints": complaint_info}), 200

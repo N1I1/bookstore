@@ -1,183 +1,156 @@
 import pytest
-import json
-from app import create_app, db
-from app.models import User, Admin ,Complaint
-
-test_complaint_2_id = 0
-test_complaint_3_id = 0
+from app import db
+from app.models import User, Admin, Complaint
 
 @pytest.fixture
-def app():
-    app = create_app()
-    with app.app_context():
-        yield app
-
+def test_user(app):
+    user = User(username='testuser', password='123456', email='testuser@example.com', phone='1234567890')
+    db.session.add(user)
+    db.session.commit()
+    yield user
+    db.session.delete(user)
+    db.session.commit()
 
 @pytest.fixture
-def client(app):
-    return app.test_client()
-
-
-def test_register_user(client):
-    # 注册用户
-    register_data = {
-        "username": "test_user",
-        "password": "test_password",
-        "email": "test@example.com",
-        "phone": "1234567890"
-    }
-    response = client.post('/api/register/', json=register_data)
-    assert response.status_code == 201, "Failed to register user"
-
-def test_register_admin(client):
-    # 注册管理员
-    register_data = {
-        "username": "test_admin",
-        "password": "test_password",
-        "email": "test@example.com",
-        "phone": "1234567890"
-    }
-    response = client.post('/api/admins/', json=register_data)
-    assert response.status_code == 201, "Failed to register admin"
-
-
-@pytest.fixture(scope='function')
-def login_user(client):
-    # 模拟用户登录
-    login_data = {
-        "username": "test_user",
-        "password": "test_password"
-    }
-    response = client.post('/api/login/', json=login_data)
-    assert response.status_code == 200, "Failed to login user"
-
-    # 获取 session 中的 user_id
-    with client.session_transaction() as sess:
-        user_id = sess.get('user_id')
-
-    assert user_id is not None, "User ID not found in session"
-    return user_id
-
-@pytest.fixture(scope='function')
-def login_admin(client):
-    # 模拟管理员登录
-    login_data = {
-        "adminname": "test_admin",
-        "password": "test_password"
-    }
-    response = client.post('/api/admin/login/', json=login_data)
-    assert response.status_code == 200, "Failed to login admin"
-
-    # 获取 session 中的 admin_id
-    with client.session_transaction() as sess:
-        admin_id = sess.get('admin_id')
-    
-    # 验证是否成功获取 admin_id
-    assert admin_id is not None, "User ID not found in session after login"
-    
-    return admin_id
-
-def test_setup_data(client, login_user):
-    user_id = login_user
-
-    # 创建投诉数据
-    complaint_1 = Complaint(user_id=user_id, content="投诉内容1", status="待处理")
-    complaint_2 = Complaint(user_id=user_id, content="投诉内容2", status="已受理", result="处理结果2")
-    db.session.add_all([complaint_1, complaint_2])
+def test_admin(app):
+    admin = Admin(username='admin', password='admin123', email='testadmin@example.com', phone='9876543210')
+    db.session.add(admin)
+    db.session.commit()
+    yield admin
+    db.session.delete(admin)
     db.session.commit()
 
-    global test_complaint_2_id
-    test_complaint_2_id = complaint_2.complaint_id
+@pytest.fixture
+def login_user(client, test_user):
+    with client.session_transaction() as sess:
+        sess['user_id'] = test_user.user_id
 
-def test_complaint_manage_user_get_success(client, login_user):
-    user_id = login_user
+@pytest.fixture
+def login_admin(client, test_admin):
+    with client.session_transaction() as sess:
+        sess['admin_id'] = test_admin.admin_id
 
-    # 验证获取所有投诉数据
-    data = {'status': None}
-    response = client.get('/api/complaint_manage/user_get', json=data)
-    assert response.status_code == 200, "Failed to get complaint data"
-    data = json.loads(response.data)
-    complaint = data['complaints']
-    assert len(complaint) > 1, "Incorrect number of complaints returned"
+def test_user_create_and_get_complaint(client, login_user, test_user):
+    # 用户创建投诉
+    response = client.post('/api/complaint_manage/user_create', json={
+        "content": "投诉内容测试"
+    })
+    assert response.status_code == 201
+    assert b"Complaint created successfully" in response.data
 
-    # 验证获取 待处理 投诉数据
-    data = {'status': '待处理'}
-    response = client.get('/api/complaint_manage/user_get', json=data)
-    assert response.status_code == 200, "Failed to get complaint data"
-    data = json.loads(response.data)
-    complaint = data['complaints']
-    assert len(complaint) == 1, "Incorrect number of complaints returned"
+    # 用户获取自己的投诉
+    response = client.get('/api/complaint_manage/user_get')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "complaints" in data
+    assert any(c["content"] == "投诉内容测试" for c in data["complaints"])
 
-    # 验证获取 已受理 投诉数据
-    data = {'status': '已受理'}
-    response = client.get('/api/complaint_manage/user_get', json=data)
-    assert response.status_code == 200, "Failed to get complaint data"
-    data = json.loads(response.data)
-    complaint = data['complaints']
-    assert len(complaint) == 1, "Incorrect number of complaints returned"
+def test_user_create_complaint_no_content(client, login_user):
+    response = client.post('/api/complaint_manage/user_create', json={})
+    assert response.status_code == 400
+    assert b"Complaint content cannot be empty" in response.data
 
-    # 验证获取 已解决 投诉数据
-    data = {'status': '已解决'}
-    response = client.get('/api/complaint_manage/user_get', json=data)
-    assert response.status_code == 404, "Failed to get complaint data"
-    data = json.loads(response.data)
-    message= data['message']
-    assert message == 'No complaints found'
+def test_user_get_complaint_not_logged_in(client):
+    response = client.get('/api/complaint_manage/user_get')
+    assert response.status_code == 401
 
-def test_complaint_manage_user_create_success(client, login_user):
-    user_id = login_user
-
-    # 创建投诉数据
-    data = {
-        "content": "投诉内容3",
-    }
-    response = client.post('/api/complaint_manage/user_create', json=data)
-    assert response.status_code == 201, "Failed to create complaint data"
-    data = json.loads(response.data)
-    message = data['message']
-    assert message == "Complaint created successfully"
-
-    global test_complaint_3_id
-    test_complaint_3_id = db.session.query(Complaint).filter_by(content="投诉内容3").first().complaint_id
-
-def test_complaint_manage_user_change_status_success(client, login_user):
-    user_id = login_user
-
-    # 更新投诉状态
-    data = {"complaint_id": test_complaint_2_id}
-    response = client.post('/api/complaint_manage/user_change_status', json=data)
-    assert response.status_code == 200, "Failed to update complaint status"
-    data = json.loads(response.data)
-    message = data['message']
-    assert message == "Complaint status updated successfully"
-
-def test_complaint_manage_admin_get_success(client, login_admin):
-    admin_id = login_admin
-
-    # 验证获取所有投诉数据
-    data = {'status': None}
-    response = client.get('/api/complaint_manage/admin_get', json=data)
-    assert response.status_code == 200, "Failed to get complaint data"
-    data = json.loads(response.data)
-    complaint = data['complaints']
-    assert len(complaint) == 3, "Incorrect number of complaints returned"
-    
-def test_complaint_manage_deal_with_complaint_success(client, login_admin):
-    admin_id = login_admin
-
-    # 处理投诉
-    data = {"complaint_id": test_complaint_3_id, "result": "处理结果3"}
-    response = client.post('/api/complaint_manage/deal_with_complaint', json=data)
-    assert response.status_code == 200, "Failed to deal with complaint"
-    data = json.loads(response.data)
-    message = data['message']
-    assert message == "Complaint processed successfully"
-
-
-def test_delete_test_data():
-    db.session.query(Complaint).delete()
-    db.session.query(User).delete()
-    db.session.query(Admin).delete()
+def test_user_change_status(client, login_user, test_user):
+    # 创建投诉
+    complaint = Complaint(user_id=test_user.user_id, content="test", status="已受理")
+    db.session.add(complaint)
     db.session.commit()
 
+    # 用户变更投诉状态
+    response = client.post('/api/complaint_manage/user_change_status', json={
+        "complaint_id": complaint.complaint_id
+    })
+    assert response.status_code == 200
+    assert b"Complaint status updated successfully" in response.data
 
+    db.session.delete(complaint)
+    db.session.commit()
+
+def test_user_change_status_wrong_status(client, login_user, test_user):
+    complaint = Complaint(user_id=test_user.user_id, content="test", status="待处理")
+    db.session.add(complaint)
+    db.session.commit()
+
+    response = client.post('/api/complaint_manage/user_change_status', json={
+        "complaint_id": complaint.complaint_id
+    })
+    assert response.status_code == 400
+    assert b"Complaint status is not" in response.data
+
+    db.session.delete(complaint)
+    db.session.commit()
+
+def test_admin_get_complaints(client, login_admin, test_user):
+    # 创建投诉
+    complaint = Complaint(user_id=test_user.user_id, content="admin test", status="待处理")
+    db.session.add(complaint)
+    db.session.commit()
+
+    response = client.get('/api/complaint_manage/admin_get')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "complaints" in data
+    assert any(c["content"] == "admin test" for c in data["complaints"])
+
+    db.session.delete(complaint)
+    db.session.commit()
+
+def test_admin_get_complaints_with_status(client, login_admin, test_user):
+    complaint = Complaint(user_id=test_user.user_id, content="admin test2", status="已解决")
+    db.session.add(complaint)
+    db.session.commit()
+
+    response = client.get('/api/complaint_manage/admin_get?status=已解决')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert any(c["status"] == "已解决" for c in data["complaints"])
+
+    db.session.delete(complaint)
+    db.session.commit()
+
+def test_deal_with_complaint(client, login_admin, test_user):
+    complaint = Complaint(user_id=test_user.user_id, content="to deal", status="待处理")
+    db.session.add(complaint)
+    db.session.commit()
+
+    response = client.post('/api/complaint_manage/deal_with_complaint', json={
+        "complaint_id": complaint.complaint_id,
+        "result": "处理结果"
+    })
+    assert response.status_code == 200
+    assert b"Complaint processed successfully" in response.data
+
+    db.session.delete(complaint)
+    db.session.commit()
+
+def test_deal_with_complaint_wrong_status(client, login_admin, test_user):
+    complaint = Complaint(user_id=test_user.user_id, content="to deal", status="已受理")
+    db.session.add(complaint)
+    db.session.commit()
+
+    response = client.post('/api/complaint_manage/deal_with_complaint', json={
+        "complaint_id": complaint.complaint_id,
+        "result": "处理结果"
+    })
+    assert response.status_code == 400
+
+    db.session.delete(complaint)
+    db.session.commit()
+
+def test_deal_with_complaint_not_found(client, login_admin):
+    response = client.post('/api/complaint_manage/deal_with_complaint', json={
+        "complaint_id": 999999,
+        "result": "处理结果"
+    })
+    assert response.status_code == 404
+
+def test_deal_with_complaint_not_logged_in(client):
+    response = client.post('/api/complaint_manage/deal_with_complaint', json={
+        "complaint_id": 1,
+        "result": "处理结果"
+    })
+    assert response.status_code == 401
