@@ -35,34 +35,30 @@ class ComplaintAPI(MethodView):
             return jsonify({"error": "Method not allowed"}), 405
     def user_get(self):
         user_id = session.get('user_id')
+        print(user_id)
         if not user_id:
             return jsonify({"error": "User not logged in"}), 401
 
-        status = request.json.get('status')
         try:
-            query = Complaint.query.filter_by(user_id=user_id)
-            if status:
-                query = query.filter_by(status=status)
-            complaints = query.all()
+            complaints = Complaint.query.filter_by(user_id=user_id).all()
+            user = db.session.get(User, user_id)
+            username = user.username if user else ""
 
             complaint_info = [
                 {
+                    "complaint_id": complaint.complaint_id,
                     "content": complaint.content,
                     "complaint_time": complaint.complaint_time.strftime("%Y-%m-%d %H:%M:%S"),
                     "status": complaint.status,
-                    "result": complaint.result
+                    "result": complaint.result,
+                    "username": username
                 } for complaint in complaints
             ]
 
-            if status is None:
-                for complaint_data in complaint_info:
-                    user = db.session.get(User, user_id)
-                    complaint_data["username"] = user.username
-
-            if complaint_info:
-                return jsonify({"message": "Complaints found", "complaints": complaint_info}), 200
-            else:
-                return jsonify({"message": "No complaints found"}), 404
+            return jsonify({
+                "message": "Complaints found" if complaint_info else "No complaints found",
+                "complaints": complaint_info
+            }), 200
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -101,6 +97,7 @@ class ComplaintAPI(MethodView):
         try:
             complaint = db.session.get(Complaint, complaint_id)
             if not complaint or complaint.user_id != user_id:
+                print(f"Complaint not found or user_id mismatch: {complaint_id}, {user_id}")
                 return jsonify({"error": "Complaint not found or you do not have permission to modify it"}), 404
 
             if complaint.status != '已受理':
@@ -147,6 +144,7 @@ class ComplaintAPI(MethodView):
             return jsonify({"error": "Admin not logged in"}), 401
 
         data = request.json
+        print(data)
         complaint_id = data.get('complaint_id')
         result = data.get('result')
         if not complaint_id or not result:
@@ -167,6 +165,7 @@ class ComplaintAPI(MethodView):
 
         except Exception as e:
             db.session.rollback()
+            print(f"Error processing complaint: {str(e)}")
             return jsonify({"error": str(e)}), 500
 
 # 注册路由

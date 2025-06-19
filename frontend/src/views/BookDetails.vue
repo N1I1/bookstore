@@ -400,9 +400,12 @@ function goPostDetail(postId) {
 }
 
 .book-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+  width: 250px;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px #00000014;
+  display: block;
+  margin: 0 auto;
 }
 
 .cart-action-btn {
