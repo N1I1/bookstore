@@ -10,6 +10,8 @@ from app.models.booktag import book_tag
 from app.models.userbrowse import UserBrowse
 from app.models.userfavorite import UserFavorite
 from app.models.usercart import UserCart
+from app.models.tag import Tag
+from app.models.complaint import Complaint
 
 def clear_all_tables():
     # 注意顺序，先清子表再清父表，避免外键约束错误
@@ -20,12 +22,14 @@ def clear_all_tables():
     db.session.query(UserCart).delete()
     db.session.query(UserBrowse).delete()
     db.session.query(UserFavorite).delete()
+    db.session.query(Complaint).delete()
     book_tag.delete()
     db.session.query(OrderDetail).delete()
     db.session.query(Comment).delete()
     db.session.query(ForumPost).delete()
     db.session.query(Order).delete()
     db.session.query(Admin).delete()
+    db.session.query(Tag).delete()
     db.session.query(Book).delete()
     db.session.query(User).delete()
     db.session.commit()
