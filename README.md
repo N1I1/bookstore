@@ -58,3 +58,7 @@ TODO
   
   
 ```
+## E-R图
+
+![image](https://github.com/user-attachments/assets/0ab8185b-b178-407e-bb12-e31873d7d4b9)
+
