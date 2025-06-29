@@ -41,7 +41,6 @@
           @click="showEdit(comment)"
         >编辑</el-button>
         <el-button
-          v-if="isMine(comment)"
           size="small"
           link
           type="danger"
