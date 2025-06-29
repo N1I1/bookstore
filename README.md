@@ -30,20 +30,31 @@ TODO
 
 ## 项目结构
 
-**doc:** 相关文档
+'''
 
-**backend：** 后端代码
-	
-|——**app：** Flask应用核心部分
+├─backend
+│  ├─app
+│  │  ├─models
+│  │  ├─routes
+│  │  │  ├─auth
+│  │  │  ├─services
+│  │  │  ├─tables
+│  │  │  └─views
+│  ├─data
+│  │  └─test
+│  ├─migrations
+│  │  ├─versions
+│  ├─static
+│  ├─templates
+├─doc
+│  ├─数据库部署
+│  └─设计文档
+├─frontend
+│  └─src
+│      ├─components
+│      ├─router
+│      └─views
+└─tests
 
-|——|——**models：** 数据库模型定义
 
-|——|——**routes：** 路由定义
-
-|——|——|——**tables：** 表的基本功能（增删改查）路由定义
-
-|——|——|——**auth：** 用户信息管理模块
-
-|——|——|——**views：** 联合查询，相关视图
-
-**frontend:** 前端代码
+'''
