@@ -30,31 +30,31 @@ TODO
 
 ## 项目结构
 
-'''
-
-├─backend
-│  ├─app
-│  │  ├─models
-│  │  ├─routes
-│  │  │  ├─auth
-│  │  │  ├─services
-│  │  │  ├─tables
-│  │  │  └─views
-│  ├─data
-│  │  └─test
-│  ├─migrations
-│  │  ├─versions
-│  ├─static
-│  ├─templates
-├─doc
-│  ├─数据库部署
-│  └─设计文档
-├─frontend
-│  └─src
-│      ├─components
-│      ├─router
-│      └─views
-└─tests
-
-
+'''  
+   
+├─backend  
+│  ├─app  
+│  │  ├─models  
+│  │  ├─routes  
+│  │  │  ├─auth  
+│  │  │  ├─services  
+│  │  │  ├─tables  
+│  │  │  └─views  
+│  ├─data  
+│  │  └─test  
+│  ├─migrations  
+│  │  ├─versions  
+│  ├─static  
+│  ├─templates  
+├─doc  
+│  ├─数据库部署  
+│  └─设计文档  
+├─frontend  
+│  └─src  
+│      ├─components  
+│      ├─router  
+│      └─views  
+└─tests  
+  
+  
 '''
