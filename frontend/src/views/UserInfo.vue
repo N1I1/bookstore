@@ -236,9 +236,7 @@ async function deleteUser() {
       }, 1500)
     }
   } catch (err) {
-    if (err !== 'cancel') {
-      handleApiError(err, '删除用户')
-    }
+    ElMessage.error('删除账户失败，请请检查是否有未完成的订单')
   }
 }
 
